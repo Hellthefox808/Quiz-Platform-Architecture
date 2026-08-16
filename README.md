@@ -7,6 +7,10 @@
 [![Pytest](https://img.shields.io/badge/pytest-passing-brightgreen.svg?logo=pytest&logoColor=white)](https://pytest.org)
 [![Security](https://img.shields.io/badge/OWASP_API_Top_10-Compliant-blue.svg?logo=owasp&logoColor=white)](https://owasp.org)
 
+<p align="center">
+  <img src="docs/assets/platform_preview.jpg" alt="ApexAssess Platform Preview" width="100%" />
+</p>
+
 ApexAssess is a production-grade, enterprise-ready Quiz Management and Online Assessment Platform architected for academic institutions, certification bodies, and technical recruitment workflows.
 
 ---
