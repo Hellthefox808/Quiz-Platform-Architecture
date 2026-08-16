@@ -35,15 +35,32 @@ export async function apiRequest<T>(
 
   // Generate correlation ID
   if (!headers.has('X-Request-ID')) {
-    headers.set('X-Request-ID', crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
+    headers.set('X-Request-ID', typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      headers,
+    });
+  } catch (netErr: any) {
+    throw new ApiError(
+      0,
+      'NETWORK_ERROR',
+      'Cannot connect to backend server. Please verify the FastAPI backend is running on http://localhost:8000.'
+    );
+  }
 
   if (!response.ok) {
+    if (response.status === 502 || response.status === 504) {
+      throw new ApiError(
+        response.status,
+        'BAD_GATEWAY',
+        'Backend server is currently offline or unreachable. Please start the FastAPI backend on port 8000.'
+      );
+    }
+
     let errorData: any = {};
     try {
       errorData = await response.json();
