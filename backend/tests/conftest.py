@@ -3,6 +3,7 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import StaticPool
 from backend.app.core.config import settings
 from backend.app.core.database import Base, get_db
 from backend.app.core.security import create_access_token, get_password_hash
@@ -12,9 +13,13 @@ from backend.app.models.question import DifficultyLevel, Question, QuestionOptio
 from backend.app.models.quiz import Quiz, QuizStatus, QuizVersion
 from backend.app.models.user import User, UserRole, UserStatus
 
-# Test DB in memory / temp file
+# Test DB in memory with StaticPool for reliable isolated in-memory transactions across threads
 TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
-test_engine = create_async_engine(TEST_DB_URL, connect_args={"check_same_thread": False})
+test_engine = create_async_engine(
+    TEST_DB_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
+)
 TestingAsyncSessionLocal = async_sessionmaker(bind=test_engine, class_=AsyncSession, expire_on_commit=False)
 
 
@@ -42,7 +47,7 @@ async def client(db_session: AsyncSession):
     app.dependency_overrides.clear()
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(scope="function")
 async def test_admin(db_session: AsyncSession) -> User:
     admin = User(
         name="Test Administrator",
@@ -57,7 +62,7 @@ async def test_admin(db_session: AsyncSession) -> User:
     return admin
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(scope="function")
 async def test_student(db_session: AsyncSession) -> User:
     student = User(
         name="Student One",
@@ -72,7 +77,7 @@ async def test_student(db_session: AsyncSession) -> User:
     return student
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(scope="function")
 async def test_student_2(db_session: AsyncSession) -> User:
     student2 = User(
         name="Student Two",
