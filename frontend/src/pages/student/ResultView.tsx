@@ -1,252 +1,229 @@
-import React, { useEffect, useState } from 'react';
-import { api } from '../../api/client';
-import { ResultResponse } from '../../types';
-import { 
-  AlertCircle, 
-  ArrowLeft, 
-  Award, 
-  CheckCircle2, 
-  Clock, 
-  HelpCircle, 
-  RotateCcw, 
-  ShieldCheck, 
-  Trophy, 
-  XCircle 
+import React from 'react';
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Clock,
+  HelpCircle,
+  ShieldCheck,
+  XCircle,
 } from 'lucide-react';
+import { useResultQuery } from '../../hooks/useResult';
+import { Card } from '../../components/ui/Card';
+import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/Button';
+import { ErrorState } from '../../components/ui/ErrorState';
+import { Skeleton } from '../../components/ui/Skeleton';
+import { NavigateFunction } from '../../types/navigation';
 
 interface ResultViewProps {
   attemptId?: string;
   resultId?: string;
-  onNavigate: (view: string, params?: any) => void;
+  onNavigate: NavigateFunction;
 }
 
 export const ResultView: React.FC<ResultViewProps> = ({ attemptId, resultId, onNavigate }) => {
-  const [result, setResult] = useState<ResultResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadResult = async () => {
-      try {
-        let resData: ResultResponse;
-        if (resultId) {
-          resData = await api.get<ResultResponse>(`/attempts/results/${resultId}`);
-        } else if (attemptId) {
-          // Attempt submit returns result
-          resData = await api.post<ResultResponse>(`/attempts/${attemptId}/submit`);
-        } else {
-          throw new Error('No result or attempt ID specified');
-        }
-        setResult(resData);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load assessment result');
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadResult();
-  }, [attemptId, resultId]);
+  const { data: result, isLoading: loading, isError, error, refetch } = useResultQuery(resultId, attemptId);
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs text-slate-400 font-mono">Evaluating assessment responses...</p>
+      <div className="max-w-4xl mx-auto px-4 py-8 space-y-8 animate-pulse">
+        <Skeleton variant="text" width="160px" height="20px" />
+        <div className="assess-surface rounded-2xl p-8 space-y-4 border border-[#38281e]">
+          <Skeleton variant="text" width="100px" height="20px" />
+          <Skeleton variant="text" width="70%" height="32px" />
+          <Skeleton variant="text" width="40%" height="16px" />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="assess-surface rounded-2xl p-5 space-y-2 border border-[#38281e]">
+              <Skeleton variant="text" width="60px" height="14px" className="mx-auto" />
+              <Skeleton variant="text" width="80px" height="24px" className="mx-auto" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
-  if (error || !result) {
+  if (isError || !result) {
     return (
       <div className="max-w-md mx-auto py-16 text-center">
-        <AlertCircle className="w-12 h-12 text-rose-400 mx-auto mb-3" />
-        <h2 className="text-xl font-bold text-white mb-2">Unable to Load Result</h2>
-        <p className="text-sm text-slate-400 mb-6">{error || 'Result details are unavailable.'}</p>
-        <button
-          onClick={() => onNavigate('dashboard')}
-          className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold rounded-xl"
-        >
-          Return to Dashboard
-        </button>
+        <ErrorState
+          title="Unable to Load Assessment Result"
+          message={error instanceof Error ? error.message : 'Result details are unavailable.'}
+          onRetry={() => refetch()}
+        />
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Top action */}
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-150">
+      {/* Top Navigation */}
       <button
         onClick={() => onNavigate('dashboard')}
-        className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition"
+        className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#cbb8a9] hover:text-[#faf4ee] transition cursor-pointer"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Dashboard
       </button>
 
       {/* Result Hero Banner */}
-      <div
-        className={`rounded-3xl p-6 sm:p-8 border shadow-2xl relative overflow-hidden ${
+      <Card
+        variant="raised"
+        className={`p-6 sm:p-8 border ${
           result.passed
-            ? 'bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-900 border-emerald-500/30'
-            : 'bg-gradient-to-r from-rose-950/60 via-slate-900 to-slate-900 border-rose-500/30'
+            ? 'border-emerald-500/30'
+            : 'border-rose-500/30'
         }`}
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <span
-              className={`inline-block text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider ${
-                result.passed
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                  : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-              }`}
-            >
+          <div className="space-y-3">
+            <Badge variant={result.passed ? 'success' : 'danger'} size="md" dot>
               {result.passed ? 'Assessment Passed' : 'Assessment Failed'}
-            </span>
+            </Badge>
 
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#faf4ee] tracking-tight">
               {result.quiz_title}
             </h1>
-            <p className="text-xs text-slate-400">
-              Completed on {new Date(result.submitted_at).toLocaleDateString()} at{' '}
+            <p className="text-[11px] text-[#cbb8a9] font-mono">
+              Submitted on {new Date(result.submitted_at).toLocaleDateString()} at{' '}
               {new Date(result.submitted_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </p>
           </div>
 
-          {/* Score Circle */}
-          <div className="text-center bg-slate-900/80 border border-slate-800 rounded-3xl p-6 min-w-44 shadow-lg shrink-0">
-            <span className="text-4xl font-black text-white tracking-tight">{result.percentage}%</span>
-            <div className="text-xs text-slate-400 mt-1">
+          {/* Score Badge Card */}
+          <div className="text-center bg-[#110c09] border border-[#38281e] rounded-2xl p-6 min-w-44 shadow-inner shrink-0">
+            <span className="text-4xl font-extrabold text-[#faf4ee] tracking-tight font-mono">{result.percentage}%</span>
+            <div className="text-xs text-[#cbb8a9] mt-2 font-medium">
               Score: {result.obtained_marks} / {result.total_marks}
             </div>
-            <div className="text-[10px] text-slate-500 mt-0.5 font-mono">
+            <div className="text-[10px] text-[#887467] mt-1 font-mono uppercase tracking-wider">
               Pass mark: {result.passing_percentage}%
             </div>
           </div>
         </div>
 
-        {/* Certificate Badge if issued */}
+        {/* Certificate Earned Banner */}
         {result.certificate_code && (
-          <div className="mt-6 pt-6 border-t border-emerald-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="mt-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center">
-                <Award className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-xs font-bold text-emerald-300">Official Certificate Issued</div>
-                <div className="text-[11px] text-slate-400 font-mono">Code: {result.certificate_code}</div>
+              <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+              <div className="text-xs">
+                <span className="font-bold text-emerald-300 block">Official Credential Issued</span>
+                <span className="text-[#cbb8a9] font-mono text-[10px]">Verification Code: {result.certificate_code}</span>
               </div>
             </div>
-            <button
+            <Button
+              variant="glass"
+              size="sm"
               onClick={() => onNavigate('certificates')}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-md transition self-start sm:self-auto cursor-pointer"
             >
               View Certificate
-            </button>
+            </Button>
           </div>
         )}
-      </div>
+      </Card>
 
-      {/* Metrics Summary Grid */}
+      {/* Metrics Breakdown Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400 mx-auto mb-1.5" />
-          <div className="text-xs text-slate-400">Correct</div>
-          <div className="text-lg font-bold text-emerald-400 mt-0.5">{result.correct_count}</div>
-        </div>
+        <Card variant="surface" className="text-center border border-[#38281e]">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 mx-auto mb-2" />
+          <div className="text-[10px] font-bold uppercase tracking-wider text-[#887467]">Correct</div>
+          <div className="text-lg font-bold text-emerald-400 mt-1 font-mono">{result.correct_count}</div>
+        </Card>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
-          <XCircle className="w-5 h-5 text-rose-400 mx-auto mb-1.5" />
-          <div className="text-xs text-slate-400">Incorrect</div>
-          <div className="text-lg font-bold text-rose-400 mt-0.5">{result.incorrect_count}</div>
-        </div>
+        <Card variant="surface" className="text-center border border-[#38281e]">
+          <XCircle className="w-5 h-5 text-rose-400 mx-auto mb-2" />
+          <div className="text-[10px] font-bold uppercase tracking-wider text-[#887467]">Incorrect</div>
+          <div className="text-lg font-bold text-rose-400 mt-1 font-mono">{result.incorrect_count}</div>
+        </Card>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
-          <HelpCircle className="w-5 h-5 text-slate-400 mx-auto mb-1.5" />
-          <div className="text-xs text-slate-400">Unanswered</div>
-          <div className="text-lg font-bold text-slate-300 mt-0.5">{result.unanswered_count}</div>
-        </div>
+        <Card variant="surface" className="text-center border border-[#38281e]">
+          <HelpCircle className="w-5 h-5 text-[#887467] mx-auto mb-2" />
+          <div className="text-[10px] font-bold uppercase tracking-wider text-[#887467]">Unanswered</div>
+          <div className="text-lg font-bold text-[#faf4ee] mt-1 font-mono">{result.unanswered_count}</div>
+        </Card>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
-          <Clock className="w-5 h-5 text-indigo-400 mx-auto mb-1.5" />
-          <div className="text-xs text-slate-400">Time Taken</div>
-          <div className="text-lg font-bold text-white mt-0.5">
+        <Card variant="surface" className="text-center border border-[#38281e]">
+          <Clock className="w-5 h-5 text-[#d4a373] mx-auto mb-2" />
+          <div className="text-[10px] font-bold uppercase tracking-wider text-[#887467]">Time Taken</div>
+          <div className="text-lg font-bold text-[#faf4ee] mt-1 font-mono">
             {Math.round(result.time_taken_seconds / 60)} min
           </div>
-        </div>
+        </Card>
       </div>
 
-      {/* Detailed Question Review (If enabled) */}
-      {result.questions_review && result.questions_review.length > 0 ? (
-        <div className="space-y-6 pt-4">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-indigo-400" />
-            Detailed Question Review
-          </h2>
-
+      {/* Detailed Question Review List */}
+      {result.questions_review && result.questions_review.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-sm font-bold text-[#faf4ee] uppercase tracking-wider">Item Evaluation Review</h2>
           <div className="space-y-4">
             {result.questions_review.map((q, idx) => (
-              <div
+              <Card
                 key={idx}
-                className={`bg-slate-900 border rounded-2xl p-6 space-y-4 ${
+                variant="surface"
+                className={`space-y-4 border ${
                   q.is_correct
-                    ? 'border-emerald-500/30 bg-emerald-950/10'
+                    ? 'border-emerald-500/20'
                     : q.selected_option_id
-                    ? 'border-rose-500/30 bg-rose-950/10'
-                    : 'border-slate-800'
+                    ? 'border-rose-500/20'
+                    : 'border-[#38281e]'
                 }`}
               >
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-mono font-bold text-slate-400">Question {q.question_order}</span>
-                  <span
-                    className={`font-semibold px-2.5 py-0.5 rounded-full ${
-                      q.is_correct
-                        ? 'bg-emerald-500/20 text-emerald-300'
-                        : q.selected_option_id
-                        ? 'bg-rose-500/20 text-rose-300'
-                        : 'bg-slate-800 text-slate-400'
-                    }`}
-                  >
-                    {q.is_correct ? `+${q.marks_awarded} Marks` : `${q.marks_awarded} Marks`}
-                  </span>
+                <div className="flex items-center justify-between border-b border-[#38281e]/80 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-[#d4a373]">
+                      Item {q.question_order}
+                    </span>
+                    <span className="text-xs text-[#cbb8a9]">
+                      ({q.marks_awarded} / {q.marks} Marks)
+                    </span>
+                  </div>
+
+                  <Badge variant={q.is_correct ? 'success' : q.selected_option_id ? 'danger' : 'neutral'} size="sm">
+                    {q.is_correct ? 'Correct' : q.selected_option_id ? 'Incorrect' : 'Unanswered'}
+                  </Badge>
                 </div>
 
-                <div className="text-base font-semibold text-white">{q.question_text}</div>
+                <div className="text-sm font-medium text-[#faf4ee] leading-relaxed">
+                  {q.question_text}
+                </div>
 
                 {/* Options Review */}
                 <div className="space-y-2 pt-1">
                   {q.options.map((opt, optIdx) => {
-                    const letter = String.fromCharCode(65 + optIdx);
-                    let optBg = 'bg-slate-800/60 border-slate-700/60 text-slate-300';
+                    const isSelected = opt.is_selected;
+                    const isCorrect = opt.is_correct;
 
-                    if (opt.is_correct) {
-                      optBg = 'bg-emerald-500/20 border-emerald-500/60 text-emerald-200 font-semibold';
-                    } else if (opt.is_selected && !opt.is_correct) {
-                      optBg = 'bg-rose-500/20 border-rose-500/60 text-rose-200';
+                    let optBg = 'bg-[#110c09] border-[#38281e]/80 text-[#cbb8a9]';
+                    if (isCorrect) {
+                      optBg = 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300 font-semibold';
+                    } else if (isSelected && !isCorrect) {
+                      optBg = 'bg-rose-500/10 border-rose-500/40 text-rose-300 font-semibold';
                     }
 
                     return (
                       <div
                         key={opt.id}
-                        className={`p-3 rounded-xl border flex items-center justify-between text-xs ${optBg}`}
+                        className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-3 ${optBg}`}
                       >
-                        <div className="flex items-center gap-2.5">
-                          <span className="w-5 h-5 rounded-md bg-slate-700/60 flex items-center justify-center font-mono font-bold">
-                            {letter}
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono font-bold w-5 h-5 rounded flex items-center justify-center bg-[#231a14]">
+                            {String.fromCharCode(65 + optIdx)}
                           </span>
                           <span>{opt.option_text}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {opt.is_selected && (
-                            <span className="text-[10px] bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded font-mono">
-                              Your Selection
-                            </span>
-                          )}
-                          {opt.is_correct && (
-                            <span className="text-[10px] bg-emerald-500/30 text-emerald-300 px-2 py-0.5 rounded font-mono font-bold">
-                              Correct Answer
-                            </span>
-                          )}
-                        </div>
+                        {isCorrect && (
+                          <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider font-mono">
+                            Correct Answer
+                          </span>
+                        )}
+                        {isSelected && !isCorrect && (
+                          <span className="text-[10px] font-bold text-rose-400 uppercase tracking-wider font-mono">
+                            Your Choice
+                          </span>
+                        )}
                       </div>
                     );
                   })}
@@ -254,18 +231,16 @@ export const ResultView: React.FC<ResultViewProps> = ({ attemptId, resultId, onN
 
                 {/* Explanation */}
                 {q.explanation && (
-                  <div className="mt-3 p-3.5 bg-slate-800/80 border border-slate-700/60 rounded-xl text-xs text-slate-300 space-y-1">
-                    <span className="font-bold text-indigo-400 block">Explanation:</span>
-                    <p className="leading-relaxed">{q.explanation}</p>
+                  <div className="p-3.5 rounded-xl bg-[#110c09] border border-[#38281e] text-xs text-[#cbb8a9] space-y-1">
+                    <span className="font-bold text-[#d4a373] block uppercase tracking-wider text-[10px]">
+                      Explanation
+                    </span>
+                    <p className="leading-relaxed text-[#cbb8a9]">{q.explanation}</p>
                   </div>
                 )}
-              </div>
+              </Card>
             ))}
           </div>
-        </div>
-      ) : (
-        <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl text-center text-xs text-slate-400">
-          Answer review is not permitted for this assessment according to platform policy.
         </div>
       )}
     </div>

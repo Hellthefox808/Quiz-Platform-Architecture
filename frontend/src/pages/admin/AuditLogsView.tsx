@@ -1,65 +1,46 @@
-import React, { useEffect, useState } from 'react';
-import { api } from '../../api/client';
-import { AuditLog } from '../../types';
-import { 
-  ArrowLeft, 
-  Clock, 
-  HelpCircle, 
-  Lock, 
-  Search, 
-  ShieldCheck, 
-  Sparkles, 
-  User as UserIcon 
+import React, { useState } from 'react';
+import {
+  ArrowLeft,
+  ShieldCheck,
 } from 'lucide-react';
+import { useAdminAuditLogsQuery } from '../../hooks/useAdminManagement';
+import { AuditLog } from '../../types';
+import { Badge } from '../../components/ui/Badge';
+import { Skeleton } from '../../components/ui/Skeleton';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { NavigateFunction } from '../../types/navigation';
 
 interface AuditLogsViewProps {
-  onNavigate: (view: string, params?: any) => void;
+  onNavigate: NavigateFunction;
 }
 
 export const AuditLogsView: React.FC<AuditLogsViewProps> = ({ onNavigate }) => {
-  const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
+  const [page] = useState(1);
+  const pageSize = 50;
 
-  const fetchLogs = async () => {
-    setLoading(true);
-    try {
-      const data = await api.get<{ items: AuditLog[]; total: number }>(
-        `/audit-logs?page=${page}&page_size=25`
-      );
-      setLogs(data.items);
-      setTotal(data.total);
-    } catch (err) {
-      console.error('Failed to load audit logs:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchLogs();
-  }, [page]);
+  const { data, isLoading: loading } = useAdminAuditLogsQuery(page, pageSize);
+  const logs: AuditLog[] = data?.items || [];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-150">
       {/* Top Header */}
       <div>
         <button
           onClick={() => onNavigate('admin-dashboard')}
-          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white mb-4 transition"
+          className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#cbb8a9] hover:text-[#faf4ee] mb-6 transition cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Admin Console
         </button>
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-6 border-b border-[#38281e]">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
-              <ShieldCheck className="w-8 h-8 text-rose-400" />
+            <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Compliance & Security</span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#faf4ee] tracking-tight flex items-center gap-2 mt-1">
+              <ShieldCheck className="w-7 h-7 text-emerald-400" />
               Security & Audit Trail
             </h1>
-            <p className="text-sm text-slate-400 mt-1">
+            <p className="text-xs sm:text-sm text-[#cbb8a9] mt-2 max-w-xl">
               Immutable ledger of administrative mutations, authentication events, and assessment lifecycle changes.
             </p>
           </div>
@@ -68,45 +49,60 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({ onNavigate }) => {
 
       {/* Logs Table */}
       {loading ? (
-        <div className="flex items-center justify-center min-h-[40vh]">
-          <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <div className="assess-surface rounded-2xl p-6 space-y-4 border border-[#38281e]">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="flex justify-between items-center py-3 border-b border-[#38281e]/50">
+              <Skeleton variant="text" width="140px" height="14px" />
+              <Skeleton variant="text" width="100px" height="20px" />
+              <Skeleton variant="text" width="180px" height="14px" />
+              <Skeleton variant="text" width="220px" height="14px" />
+            </div>
+          ))}
         </div>
+      ) : logs.length === 0 ? (
+        <EmptyState
+          icon={<ShieldCheck className="w-8 h-8" />}
+          title="No Audit Logs Recorded"
+          description="Security events and administrative actions will automatically populate here."
+        />
       ) : (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
-          <table className="w-full text-left text-sm text-slate-300">
-            <thead className="bg-slate-850 text-xs uppercase font-mono text-slate-400 border-b border-slate-800">
-              <tr>
-                <th className="px-6 py-4">Timestamp</th>
-                <th className="px-6 py-4">Action</th>
-                <th className="px-6 py-4">User</th>
-                <th className="px-6 py-4">Resource</th>
-                <th className="px-6 py-4">Details</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60 font-mono text-xs">
-              {logs.map((l) => (
-                <tr key={l.id} className="hover:bg-slate-800/40 transition">
-                  <td className="px-6 py-4 text-slate-400">
-                    {new Date(l.created_at).toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
-                      {l.action}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-slate-300">
-                    {l.user_email || 'System'}
-                  </td>
-                  <td className="px-6 py-4 text-slate-400">
-                    {l.resource_type ? `${l.resource_type}` : '—'}
-                  </td>
-                  <td className="px-6 py-4 text-slate-400 max-w-xs truncate">
-                    {l.details ? JSON.stringify(l.details) : '—'}
-                  </td>
+        <div className="assess-surface rounded-2xl overflow-hidden shadow-xl border border-[#38281e]">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-[#cbb8a9]">
+              <thead className="bg-[#110c09] text-[10px] uppercase font-mono tracking-wider text-[#887467] border-b border-[#38281e]">
+                <tr>
+                  <th className="px-6 py-4">Timestamp</th>
+                  <th className="px-6 py-4">Action</th>
+                  <th className="px-6 py-4">User</th>
+                  <th className="px-6 py-4">Resource</th>
+                  <th className="px-6 py-4">Details</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-[#38281e]/60 font-mono text-[11px]">
+                {logs.map((l) => (
+                  <tr key={l.id} className="hover:bg-[#231a14]/40 transition-colors">
+                    <td className="px-6 py-4 text-[#887467] whitespace-nowrap">
+                      {new Date(l.created_at).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge variant="info" size="sm">
+                        {l.action}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 text-[#faf4ee] whitespace-nowrap">
+                      {l.user_email || 'System'}
+                    </td>
+                    <td className="px-6 py-4 text-[#cbb8a9] whitespace-nowrap">
+                      {l.resource_type ? `${l.resource_type}` : '—'}
+                    </td>
+                    <td className="px-6 py-4 text-[#887467] max-w-xs truncate" title={l.details ? JSON.stringify(l.details) : ''}>
+                      {l.details ? JSON.stringify(l.details) : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

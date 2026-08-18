@@ -35,18 +35,17 @@ ApexAssess is a production-grade, enterprise-ready Quiz Management and Online As
 
 ### 2. Backend Setup
 ```bash
-# Navigate to backend directory
-cd backend
+# Create and activate virtual environment (from the project root)
+# On Windows (PowerShell):
+python -m venv backend\.venv
+.\backend\.venv\Scripts\activate
 
-# Create and activate virtual environment
-python -m venv .venv
-# On Windows:
-.venv\Scripts\activate
 # On Linux/macOS:
-source .venv/bin/activate
+python3 -m venv backend/.venv
+source backend/.venv/bin/activate
 
 # Install dependencies
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
 
 # Seed realistic database (Categories, Quizzes, Questions, Historical Attempts, Admin & Students)
 python -m backend.app.seed

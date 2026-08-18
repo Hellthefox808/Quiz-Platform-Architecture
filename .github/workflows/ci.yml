@@ -34,7 +34,7 @@ jobs:
           python -m pytest backend/tests -v --tb=short
 
   frontend-build:
-    name: Frontend Typecheck & Build Verification
+    name: Frontend Lint, Typecheck & Production Build
     runs-on: ubuntu-latest
 
     steps:
@@ -52,6 +52,71 @@ jobs:
         working-directory: ./frontend
         run: npm ci
 
-      - name: Run Build & Typecheck
+      - name: Run Linter (oxlint)
+        working-directory: ./frontend
+        run: npm run lint
+
+      - name: Run Typecheck
+        working-directory: ./frontend
+        run: npm run typecheck
+
+      - name: Run Production Bundle Build
         working-directory: ./frontend
         run: npm run build
+
+  fullstack-integration:
+    name: Fullstack FE & BE Integration Pipeline
+    needs: [backend-test, frontend-build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Backend & Frontend Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          cd frontend && npm ci
+
+      - name: Start Backend API Service
+        env:
+          PYTHONPATH: .
+        run: |
+          python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 &
+          # Wait for backend health and readiness
+          for i in {1..30}; do
+            if curl -s http://127.0.0.1:8000/api/v1/health | grep -q '"status":"healthy"'; then
+              echo "Backend is healthy and listening on port 8000"
+              break
+            fi
+            echo "Waiting for backend service ($i/30)..."
+            sleep 1
+          done
+
+      - name: Validate Backend Readiness Probe
+        run: |
+          curl -f -s http://127.0.0.1:8000/ready | grep -q '"status":"ready"'
+          echo "Backend database readiness confirmed."
+
+      - name: Verify Frontend Production Build & API Integration
+        working-directory: ./frontend
+        env:
+          VITE_API_URL: http://127.0.0.1:8000
+        run: |
+          npm run build
+          echo "Frontend production bundle compiled successfully with live API configuration."

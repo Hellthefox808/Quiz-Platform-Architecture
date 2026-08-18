@@ -328,7 +328,7 @@ export interface AuditLog {
   resource_id?: string;
   ip_address?: string;
   user_agent?: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   created_at: string;
 }
 
@@ -361,3 +361,123 @@ export interface PaginatedResult<T> {
   page_size: number;
   total_pages: number;
 }
+
+export interface SaveAnswerRequest {
+  attempt_question_id: string;
+  selected_option_id?: string | null;
+  client_timestamp?: string;
+}
+
+export interface SaveAnswerResponse {
+  attempt_question_id: string;
+  selected_option_id?: string | null;
+  saved_at: string;
+  remaining_seconds: number;
+}
+
+export interface SubmitAttemptRequest {
+  client_timestamp?: string;
+}
+
+export interface CreateCategoryRequest {
+  name: string;
+  description?: string;
+}
+
+export interface UpdateCategoryRequest {
+  name?: string;
+  description?: string;
+  is_active?: boolean;
+}
+
+export interface QuestionOptionInput {
+  option_text: string;
+  is_correct: boolean;
+  position?: number;
+}
+
+export interface CreateQuestionRequest {
+  question_text: string;
+  question_type?: QuestionType;
+  marks?: number;
+  difficulty?: DifficultyLevel;
+  explanation?: string;
+  options: QuestionOptionInput[];
+}
+
+export interface UpdateQuestionRequest {
+  question_text?: string;
+  question_type?: QuestionType;
+  marks?: number;
+  difficulty?: DifficultyLevel;
+  explanation?: string;
+  position?: number;
+  options?: QuestionOptionInput[];
+}
+
+export interface QuizVersionConfigInput {
+  duration_seconds?: number;
+  passing_percentage?: number;
+  max_attempts?: number;
+  shuffle_questions?: boolean;
+  shuffle_options?: boolean;
+  negative_marking_enabled?: boolean;
+  negative_mark_value?: number;
+  show_result_immediately?: boolean;
+  show_correct_answers?: boolean;
+  show_explanations?: boolean;
+  allow_review?: boolean;
+  allow_resume?: boolean;
+  available_from?: string;
+  available_until?: string;
+}
+
+export interface CreateQuizRequest {
+  title: string;
+  description?: string;
+  category_id: string;
+  thumbnail_url?: string;
+  config?: QuizVersionConfigInput;
+  duration_seconds?: number;
+  passing_percentage?: number;
+  max_attempts?: number;
+  shuffle_questions?: boolean;
+  shuffle_options?: boolean;
+  negative_marking_enabled?: boolean;
+  negative_mark_value?: number;
+  show_result_immediately?: boolean;
+  show_correct_answers?: boolean;
+  show_explanations?: boolean;
+  allow_review?: boolean;
+  allow_resume?: boolean;
+  available_from?: string;
+  available_until?: string;
+}
+
+
+export interface UpdateQuizRequest {
+  title?: string;
+  description?: string;
+  category_id?: string;
+  thumbnail_url?: string;
+  duration_seconds?: number;
+  passing_percentage?: number;
+  max_attempts?: number;
+  shuffle_questions?: boolean;
+  shuffle_options?: boolean;
+  negative_marking_enabled?: boolean;
+  negative_mark_value?: number;
+  show_result_immediately?: boolean;
+  show_correct_answers?: boolean;
+  show_explanations?: boolean;
+  allow_review?: boolean;
+  allow_resume?: boolean;
+  available_from?: string;
+  available_until?: string;
+}
+
+export type PaginatedResponse<T> = PaginatedResult<T>;
+
+
+
+

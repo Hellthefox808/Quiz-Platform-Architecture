@@ -1,189 +1,221 @@
-import React, { useEffect, useState } from 'react';
-import { api } from '../../api/client';
-import { useAuth } from '../../context/AuthContext';
-import { UserAdmin, UserStatus } from '../../types';
-import { 
-  AlertCircle, 
-  ArrowLeft, 
-  CheckCircle2, 
-  HelpCircle, 
-  Search, 
-  ShieldAlert, 
-  ShieldCheck, 
-  UserCheck, 
-  UserX, 
-  Users 
+import React, { useState } from 'react';
+import { useAuth } from '../../hooks/useAuth';
+import { UserAdmin, UserStatus, UserRole } from '../../types';
+import {
+  ArrowLeft,
+  Search,
+  Users,
+  Shield,
+  UserCheck,
+  UserX,
 } from 'lucide-react';
+import { useAdminUsersQuery, useAdminUserMutations } from '../../hooks/useAdminManagement';
+import { Button } from '../../components/ui/Button';
+import { Badge } from '../../components/ui/Badge';
+import { Skeleton } from '../../components/ui/Skeleton';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { NavigateFunction } from '../../types/navigation';
 
 interface UserManagerProps {
-  onNavigate: (view: string, params?: any) => void;
+  onNavigate: NavigateFunction;
 }
 
 export const UserManager: React.FC<UserManagerProps> = ({ onNavigate }) => {
   const { user: currentUser } = useAuth();
-  const [users, setUsers] = useState<UserAdmin[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
+  const pageSize = 30;
 
-  const fetchUsers = async () => {
-    setLoading(true);
-    try {
-      let url = `/users?page=${page}&page_size=20`;
-      if (search.trim()) {
-        url += `&search=${encodeURIComponent(search.trim())}`;
-      }
-      const data = await api.get<{ items: UserAdmin[]; total: number }>(url);
-      setUsers(data.items);
-      setTotal(data.total);
-    } catch (err) {
-      console.error('Failed to load users:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data, isLoading: loading, refetch } = useAdminUsersQuery(page, pageSize, searchInput.trim());
+  const { updateUserStatus, updateUserRole } = useAdminUserMutations();
 
-  useEffect(() => {
-    fetchUsers();
-  }, [page]);
+  const users: UserAdmin[] = data?.items || [];
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchUsers();
+    setPage(1);
   };
 
-  const handleToggleStatus = async (user: UserAdmin) => {
-    if (user.id === currentUser?.id) {
+  const handleToggleStatus = async (targetUser: UserAdmin) => {
+    if (targetUser.id === currentUser?.id) {
       alert('You cannot suspend your own administrator account.');
       return;
     }
-    const newStatus: UserStatus = user.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-    if (!confirm(`Are you sure you want to change account status to ${newStatus} for ${user.email}?`)) {
+    const newStatus: UserStatus = targetUser.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
+    try {
+      await updateUserStatus.mutateAsync({ userId: targetUser.id, status: newStatus });
+    } catch (err: unknown) {
+      const errObj = err as Error | undefined;
+      alert(errObj?.message || 'Failed to update user status');
+    }
+  };
+
+  const handleToggleRole = async (targetUser: UserAdmin) => {
+    if (targetUser.id === currentUser?.id) {
+      alert('You cannot modify your own administrator role.');
       return;
     }
-
+    const newRole: UserRole = targetUser.role === 'ADMIN' ? 'STUDENT' : 'ADMIN';
+    if (
+      !confirm(
+        `Are you sure you want to change ${targetUser.name}'s role to ${newRole}?`
+      )
+    ) {
+      return;
+    }
     try {
-      await api.patch(`/users/${user.id}/status`, { status: newStatus });
-      fetchUsers();
-    } catch (err: any) {
-      alert(err.message || 'Failed to update user status');
+      await updateUserRole.mutateAsync({ userId: targetUser.id, role: newRole });
+    } catch (err: unknown) {
+      const errObj = err as Error | undefined;
+      alert(errObj?.message || 'Failed to update user role');
     }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Top Header */}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-150">
+      {/* Top Navigation */}
       <div>
         <button
           onClick={() => onNavigate('admin-dashboard')}
-          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white mb-4 transition"
+          className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#cbb8a9] hover:text-[#faf4ee] mb-6 transition cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Admin Console
         </button>
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-[#38281e]">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
-              <Users className="w-8 h-8 text-indigo-400" />
-              User & Student Governance
+            <span className="text-xs font-bold text-[#d4a373] uppercase tracking-wider">User Governance</span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#faf4ee] tracking-tight flex items-center gap-2 mt-1">
+              <Users className="w-7 h-7 text-[#d4a373]" />
+              Registered Accounts & Roles
             </h1>
-            <p className="text-sm text-slate-400 mt-1">
-              Search registered users, inspect attempt stats, and manage account authorization status.
+            <p className="text-xs sm:text-sm text-[#cbb8a9] mt-2 max-w-xl">
+              Inspect user attempt velocities, manage role permissions, and control access statuses.
             </p>
           </div>
 
-          <form onSubmit={handleSearchSubmit} className="relative max-w-sm w-full">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name or email..."
-              className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
+          {/* Search Form */}
+          <form onSubmit={handleSearchSubmit} className="flex gap-2">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#887467]" />
+              <input
+                type="text"
+                placeholder="Search user name or email..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="pl-10 pr-4 py-2 text-xs rounded-xl w-64 bg-[#110c09] border border-[#38281e] text-[#faf4ee] placeholder-[#887467] focus:outline-none focus:border-[#d4a373] focus:ring-1 focus:ring-[#d4a373] shadow-inner"
+              />
+            </div>
+            <Button type="submit" variant="secondary" size="sm">
+              Filter
+            </Button>
           </form>
         </div>
       </div>
 
-      {/* Users Table */}
+      {/* Main Table Content */}
       {loading ? (
-        <div className="flex items-center justify-center min-h-[40vh]">
-          <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <div className="assess-surface rounded-2xl p-6 space-y-3">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="flex justify-between items-center py-3 border-b border-[#38281e]/40">
+              <Skeleton variant="text" width="180px" height="18px" />
+              <Skeleton variant="text" width="80px" height="18px" />
+              <Skeleton variant="text" width="60px" height="18px" />
+              <Skeleton variant="text" width="90px" height="24px" />
+            </div>
+          ))}
         </div>
+      ) : users.length === 0 ? (
+        <EmptyState
+          icon={<Users className="w-8 h-8" />}
+          title="No Users Found"
+          description={
+            searchInput
+              ? 'No users match your active search filter. Try clearing the search term.'
+              : 'No user accounts are currently registered in the database.'
+          }
+          primaryActionLabel={searchInput ? 'Clear Filter' : undefined}
+          onPrimaryAction={() => {
+            setSearchInput('');
+            refetch();
+          }}
+        />
       ) : (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
-          <table className="w-full text-left text-sm text-slate-300">
-            <thead className="bg-slate-850 text-xs uppercase font-mono text-slate-400 border-b border-slate-800">
-              <tr>
-                <th className="px-6 py-4">User</th>
-                <th className="px-6 py-4 text-center">Role</th>
-                <th className="px-6 py-4 text-center">Attempts</th>
-                <th className="px-6 py-4 text-center">Avg Score</th>
-                <th className="px-6 py-4 text-center">Status</th>
-                <th className="px-6 py-4 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60">
-              {users.map((u) => (
-                <tr key={u.id} className="hover:bg-slate-800/40 transition">
-                  <td className="px-6 py-4">
-                    <div className="font-bold text-white">{u.name}</div>
-                    <div className="text-xs text-slate-400">{u.email}</div>
-                  </td>
-
-                  <td className="px-6 py-4 text-center">
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase font-mono ${
-                        u.role === 'ADMIN'
-                          ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                          : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'
-                      }`}
-                    >
-                      {u.role}
-                    </span>
-                  </td>
-
-                  <td className="px-6 py-4 text-center text-xs font-semibold">
-                    <span className="text-emerald-400 font-bold">{u.passed_attempts}</span>
-                    <span className="text-slate-500"> / {u.total_attempts}</span>
-                  </td>
-
-                  <td className="px-6 py-4 text-center font-bold text-white text-xs">
-                    {u.average_score}%
-                  </td>
-
-                  <td className="px-6 py-4 text-center">
-                    <span
-                      className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase ${
-                        u.status === 'ACTIVE'
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                          : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
-                      }`}
-                    >
-                      {u.status}
-                    </span>
-                  </td>
-
-                  <td className="px-6 py-4 text-right">
-                    {u.id !== currentUser?.id && (
-                      <button
-                        onClick={() => handleToggleStatus(u)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
-                          u.status === 'ACTIVE'
-                            ? 'bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white border-rose-500/30'
-                            : 'bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white border-emerald-500/30'
-                        }`}
-                      >
-                        {u.status === 'ACTIVE' ? 'Suspend' : 'Activate'}
-                      </button>
-                    )}
-                  </td>
+        <div className="assess-surface rounded-2xl overflow-hidden shadow-xl border border-[#38281e]">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-[#cbb8a9]">
+              <thead className="bg-[#110c09] text-[10px] uppercase font-mono tracking-wider text-[#887467] border-b border-[#38281e]">
+                <tr>
+                  <th className="px-6 py-4">User</th>
+                  <th className="px-6 py-4 text-center">Role</th>
+                  <th className="px-6 py-4 text-center">Attempts</th>
+                  <th className="px-6 py-4 text-center">Avg Score</th>
+                  <th className="px-6 py-4 text-center">Status</th>
+                  <th className="px-6 py-4 text-right">Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-[#38281e]/60">
+                {users.map((u) => (
+                  <tr key={u.id} className="hover:bg-[#231a14]/40 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-[#faf4ee] text-sm">{u.name}</div>
+                      <div className="text-[11px] text-[#887467] mt-0.5 font-mono">{u.email}</div>
+                    </td>
+
+                    <td className="px-6 py-4 text-center">
+                      <Badge variant={u.role === 'ADMIN' ? 'accent' : 'info'} size="sm">
+                        {u.role}
+                      </Badge>
+                    </td>
+
+                    <td className="px-6 py-4 text-center font-mono text-[11px]">
+                      <span className="text-emerald-400 font-bold">{u.passed_attempts}</span>
+                      <span className="text-[#887467]"> / {u.total_attempts}</span>
+                    </td>
+
+                    <td className="px-6 py-4 text-center font-mono text-[11px] font-bold text-[#faf4ee]">
+                      {Math.round(u.average_score)}%
+                    </td>
+
+                    <td className="px-6 py-4 text-center">
+                      <Badge variant={u.status === 'ACTIVE' ? 'success' : 'danger'} size="sm" dot>
+                        {u.status}
+                      </Badge>
+                    </td>
+
+                    <td className="px-6 py-4 text-right">
+                      <div className="inline-flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleToggleRole(u)}
+                          disabled={u.id === currentUser?.id}
+                          title={u.role === 'ADMIN' ? 'Demote to Student' : 'Promote to Admin'}
+                        >
+                          <Shield className="w-3.5 h-3.5 text-[#887467]" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleToggleStatus(u)}
+                          disabled={u.id === currentUser?.id}
+                          className={u.status === 'ACTIVE' ? 'text-rose-400 hover:text-rose-300' : 'text-emerald-400 hover:text-emerald-300'}
+                          title={u.status === 'ACTIVE' ? 'Suspend Account' : 'Activate Account'}
+                        >
+                          {u.status === 'ACTIVE' ? (
+                            <UserX className="w-3.5 h-3.5" />
+                          ) : (
+                            <UserCheck className="w-3.5 h-3.5" />
+                          )}
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

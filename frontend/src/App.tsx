@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './hooks/useAuth';
 import { Navbar } from './components/common/Navbar';
+import { SyncDebugPanel } from './components/common/SyncDebugPanel';
 import { AuthPage } from './pages/auth/AuthPage';
 import { StudentDashboard } from './pages/student/StudentDashboard';
 import { QuizCatalog } from './pages/student/QuizCatalog';
@@ -17,23 +19,56 @@ import { CategoryManager } from './pages/admin/CategoryManager';
 import { UserManager } from './pages/admin/UserManager';
 import { AuditLogsView } from './pages/admin/AuditLogsView';
 import { QuestionAnalyticsView } from './pages/admin/QuestionAnalyticsView';
+import {
+  isValidAttemptRoute,
+  isValidQuizRoute,
+  NavigateFunction,
+  NavigationState,
+  View,
+  ViewParamsMap,
+} from './types/navigation';
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
-  const [currentView, setCurrentView] = useState<string>('dashboard');
-  const [viewParams, setViewParams] = useState<any>({});
+  const [navState, setNavState] = useState<NavigationState>({ view: 'dashboard' });
 
-  const handleNavigate = (view: string, params: any = {}) => {
-    setCurrentView(view);
-    setViewParams(params);
+  const handleNavigate: NavigateFunction = <V extends View>(
+    view: V,
+    ...args: undefined extends ViewParamsMap[V]
+      ? [params?: ViewParamsMap[V]]
+      : [params: ViewParamsMap[V]]
+  ) => {
+    const params = args[0];
+
+    // Route parameter guards
+    if (view === 'quiz-detail' && !isValidQuizRoute(params as { quizId?: string } | undefined)) {
+      console.warn('Navigation guard: Missing quizId for quiz-detail route, redirecting to catalog.');
+      setNavState({ view: 'catalog' });
+      window.scrollTo(0, 0);
+      return;
+    }
+    if (view === 'assessment' && !isValidAttemptRoute(params as { attemptId?: string } | undefined)) {
+      console.warn('Navigation guard: Missing attemptId for assessment route, redirecting to dashboard.');
+      setNavState({ view: 'dashboard' });
+      window.scrollTo(0, 0);
+      return;
+    }
+    if (view === 'admin-questions' && !isValidQuizRoute(params as { quizId?: string } | undefined)) {
+      console.warn('Navigation guard: Missing quizId for admin-questions route, redirecting to admin-quizzes.');
+      setNavState({ view: 'admin-quizzes' });
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    setNavState({ view, params } as NavigationState);
     window.scrollTo(0, 0);
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-3">
-        <div className="w-10 h-10 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-        <span className="text-xs font-mono text-slate-400">Loading ApexAssess Engine...</span>
+      <div className="min-h-screen bg-[#faf7f2] flex flex-col items-center justify-center gap-4">
+        <div className="w-10 h-10 border-3 border-[#b46927] border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs font-mono text-[#5c4738] tracking-wider uppercase">Loading ApexAssess Engine...</span>
       </div>
     );
   }
@@ -42,58 +77,64 @@ const AppContent: React.FC = () => {
     return <AuthPage />;
   }
 
-  // Active Assessment screen is full-screen without distracting top nav
-  if (currentView === 'assessment' && viewParams.attemptId) {
+  // Active Assessment screen is full-screen without top nav
+  if (navState.view === 'assessment' && navState.params && isValidAttemptRoute(navState.params)) {
     return (
-      <ActiveAssessment
-        attemptId={viewParams.attemptId}
-        onNavigate={handleNavigate}
-      />
+      <>
+        <ActiveAssessment
+          attemptId={navState.params.attemptId}
+          onNavigate={handleNavigate}
+        />
+        <SyncDebugPanel />
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <Navbar currentView={currentView} onNavigate={handleNavigate} />
+    <div className="min-h-screen bg-[#faf7f2] text-[#1c130d] flex flex-col">
+      <Navbar currentView={navState.view} onNavigate={handleNavigate} />
 
       <main className="flex-1 pb-16">
-        {currentView === 'dashboard' && <StudentDashboard onNavigate={handleNavigate} />}
-        {currentView === 'catalog' && <QuizCatalog onNavigate={handleNavigate} />}
-        {currentView === 'quiz-detail' && (
-          <QuizDetail quizId={viewParams.quizId} onNavigate={handleNavigate} />
+        {navState.view === 'dashboard' && <StudentDashboard onNavigate={handleNavigate} />}
+        {navState.view === 'catalog' && <QuizCatalog onNavigate={handleNavigate} />}
+        {navState.view === 'quiz-detail' && navState.params && isValidQuizRoute(navState.params) && (
+          <QuizDetail quizId={navState.params.quizId} onNavigate={handleNavigate} />
         )}
-        {currentView === 'result' && (
+        {navState.view === 'result' && navState.params && isValidAttemptRoute(navState.params) && (
           <ResultView
-            attemptId={viewParams.attemptId}
-            resultId={viewParams.resultId}
+            attemptId={navState.params.attemptId}
+            resultId={navState.params.resultId}
             onNavigate={handleNavigate}
           />
         )}
-        {currentView === 'history' && <AttemptHistory onNavigate={handleNavigate} />}
-        {currentView === 'leaderboard' && <LeaderboardView />}
-        {currentView === 'certificates' && <CertificatesView />}
+        {navState.view === 'history' && <AttemptHistory onNavigate={handleNavigate} />}
+        {navState.view === 'leaderboard' && <LeaderboardView />}
+        {navState.view === 'certificates' && <CertificatesView />}
 
         {/* Admin Views */}
-        {currentView === 'admin-dashboard' && <AdminDashboard onNavigate={handleNavigate} />}
-        {currentView === 'admin-quizzes' && <QuizManager onNavigate={handleNavigate} />}
-        {currentView === 'admin-questions' && (
+        {navState.view === 'admin-dashboard' && <AdminDashboard onNavigate={handleNavigate} />}
+        {navState.view === 'admin-quizzes' && <QuizManager onNavigate={handleNavigate} />}
+        {navState.view === 'admin-questions' && navState.params && isValidQuizRoute(navState.params) && (
           <QuestionBank
-            quizId={viewParams.quizId}
-            quizTitle={viewParams.quizTitle}
+            quizId={navState.params.quizId}
+            quizTitle={navState.params.quizTitle}
             onNavigate={handleNavigate}
           />
         )}
-        {currentView === 'admin-categories' && <CategoryManager onNavigate={handleNavigate} />}
-        {currentView === 'admin-users' && <UserManager onNavigate={handleNavigate} />}
-        {currentView === 'admin-audit' && <AuditLogsView onNavigate={handleNavigate} />}
-        {currentView === 'admin-questions-analytics' && (
+        {navState.view === 'admin-categories' && <CategoryManager onNavigate={handleNavigate} />}
+        {navState.view === 'admin-users' && <UserManager onNavigate={handleNavigate} />}
+        {navState.view === 'admin-audit' && <AuditLogsView onNavigate={handleNavigate} />}
+        {navState.view === 'admin-questions-analytics' && (
           <QuestionAnalyticsView onNavigate={handleNavigate} />
         )}
       </main>
 
+      {/* Global Observability & Dev Debug Panel */}
+      <SyncDebugPanel />
+
       {/* Global Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-600 font-mono">
-        ApexAssess Platform v2.0 • Production Assessment Engine • Server-Authoritative Grading
+      <footer className="border-t border-[#e8dfd5] bg-white py-6 text-center text-xs text-[#8a7465] font-mono">
+        ApexAssess Platform v2.0 • Enterprise Assessment Engine • Server-Authoritative Timing
       </footer>
     </div>
   );

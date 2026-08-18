@@ -1,74 +1,67 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { api, ApiError } from '../api/client';
-import { User, UserRole } from '../types';
-
-interface AuthContextType {
-  user: User | null;
-  token: string | null;
-  isAuthenticated: boolean;
-  isAdmin: boolean;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
-  refreshUser: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import React, { useEffect, useState, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { authApi } from '../api/client';
+import { User } from '../types';
+import { invalidation } from '../lib/invalidation';
+import { authKeys } from '../lib/queryKeys';
+import { AuthContext } from './authContextDef';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const fetchCurrentUser = async () => {
+  const fetchCurrentUser = useCallback(async () => {
     try {
-      if (!localStorage.getItem('token')) {
+      const storedToken = localStorage.getItem('token');
+      if (!storedToken) {
         setUser(null);
         setIsLoading(false);
         return;
       }
-      const currentUser = await api.get<User>('/auth/me');
+      const currentUser = await authApi.getMe();
       setUser(currentUser);
-    } catch (err) {
-      console.warn('Failed to restore session:', err);
+      queryClient.setQueryData(authKeys.me(), currentUser);
+    } catch (err: unknown) {
+      console.warn('Session expired or invalid token:', err);
       localStorage.removeItem('token');
       setToken(null);
       setUser(null);
+      invalidation.clearUserCacheOnLogout(queryClient);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [queryClient]);
 
   useEffect(() => {
     fetchCurrentUser();
-  }, []);
+  }, [fetchCurrentUser]);
 
   const login = async (email: string, password: string) => {
-    const res = await api.post<{
-      access_token: string;
-      user_id: string;
-      name: string;
-      email: string;
-      role: UserRole;
-      status: string;
-    }>('/auth/login', { email, password });
-
+    const res = await authApi.login({ email, password });
     localStorage.setItem('token', res.access_token);
     setToken(res.access_token);
     await fetchCurrentUser();
   };
 
   const register = async (name: string, email: string, password: string) => {
-    await api.post<User>('/auth/register', { name, email, password });
-    // Automatically log in after registration
+    await authApi.register({ name, email, password });
     await login(email, password);
   };
 
+  /**
+   * User Switch & Logout Security:
+   * 1. Remove auth token
+   * 2. Evict all user-sensitive cache data via invalidation matrix
+   * 3. Reset local auth state
+   * Ensures Student A's cached queries will NEVER be visible to Student B
+   */
   const logout = () => {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
+    invalidation.clearUserCacheOnLogout(queryClient);
   };
 
   const refreshUser = async () => {
@@ -95,12 +88,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 };

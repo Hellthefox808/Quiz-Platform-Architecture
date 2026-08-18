@@ -1,232 +1,228 @@
-import React, { useEffect, useState } from 'react';
-import { api } from '../../api/client';
-import { QuizStudentDetail } from '../../types';
-import { 
-  AlertTriangle, 
-  ArrowLeft, 
-  Award, 
-  CheckCircle2, 
-  Clock, 
-  HelpCircle, 
-  Play, 
-  RotateCcw, 
-  ShieldAlert, 
-  ShieldCheck, 
-  Sparkles, 
-  Trophy, 
-  Zap 
+import React, { useState } from 'react';
+import {
+  ArrowLeft,
+  Award,
+  CheckCircle2,
+  Clock,
+  Play,
+  RotateCcw,
+  Trophy,
+  Info,
+  ShieldCheck,
+  Zap,
 } from 'lucide-react';
+import { useQuizDetailQuery, useQuizMutations } from '../../hooks/useQuizzes';
+import { Button } from '../../components/ui/Button';
+import { Badge } from '../../components/ui/Badge';
+import { ErrorState } from '../../components/ui/ErrorState';
+import { Skeleton } from '../../components/ui/Skeleton';
+import { NavigateFunction } from '../../types/navigation';
 
 interface QuizDetailProps {
   quizId: string;
-  onNavigate: (view: string, params?: any) => void;
+  onNavigate: NavigateFunction;
 }
 
 export const QuizDetail: React.FC<QuizDetailProps> = ({ quizId, onNavigate }) => {
-  const [quiz, setQuiz] = useState<QuizStudentDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [starting, setStarting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadQuiz = async () => {
-      try {
-        const data = await api.get<QuizStudentDetail>(`/quizzes/details/${quizId}`);
-        setQuiz(data);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load assessment details');
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadQuiz();
-  }, [quizId]);
+  const { data: quiz, isLoading: loading, isError, refetch } = useQuizDetailQuery(quizId);
+  const { startQuizAttempt } = useQuizMutations();
+  const [startError, setStartError] = useState<string | null>(null);
 
   const handleStartOrResume = async () => {
-    setStarting(true);
-    setError(null);
+    setStartError(null);
     try {
       if (quiz?.active_attempt_id) {
-        // Resume existing active attempt
-        onNavigate('assessment', { attemptId: quiz.active_attempt_id, quizId });
+        onNavigate('assessment', { attemptId: quiz.active_attempt_id });
         return;
       }
-      const attempt = await api.post<{ id: string }>(`/attempts/quizzes/${quizId}/start`);
-      onNavigate('assessment', { attemptId: attempt.id, quizId });
-    } catch (err: any) {
-      setError(err.message || 'Unable to start assessment');
-    } finally {
-      setStarting(false);
+      const attempt = await startQuizAttempt.mutateAsync(quizId);
+      onNavigate('assessment', { attemptId: attempt.id });
+    } catch (err: unknown) {
+      const errObj = err as Error | undefined;
+      setStartError(errObj?.message || 'Unable to start assessment session.');
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      <div className="max-w-4xl mx-auto px-4 py-8 space-y-8 animate-pulse">
+        <Skeleton variant="text" width="160px" height="20px" />
+        <div className="bg-white rounded-3xl p-8 space-y-4 border border-[#e8dfd5]">
+          <Skeleton variant="text" width="100px" height="20px" />
+          <Skeleton variant="text" width="60%" height="32px" />
+          <Skeleton variant="text" width="80%" height="16px" />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white rounded-3xl p-5 space-y-2 border border-[#e8dfd5]">
+              <Skeleton variant="text" width="60px" height="14px" className="mx-auto" />
+              <Skeleton variant="text" width="80px" height="24px" className="mx-auto" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
-  if (error || !quiz) {
+  if (isError || !quiz) {
     return (
-      <div className="max-w-2xl mx-auto py-16 px-4 text-center">
-        <ShieldAlert className="w-12 h-12 text-rose-400 mx-auto mb-4" />
-        <h2 className="text-xl font-bold text-white mb-2">Assessment Unavailable</h2>
-        <p className="text-sm text-slate-400 mb-6">{error || 'This quiz is currently unavailable.'}</p>
-        <button
-          onClick={() => onNavigate('catalog')}
-          className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold rounded-xl transition"
-        >
-          Return to Catalog
-        </button>
+      <div className="max-w-2xl mx-auto py-16 px-4">
+        <ErrorState
+          title="Assessment Unavailable"
+          message="We could not load this assessment's configuration and snapshot from the server."
+          onRetry={() => refetch()}
+        />
       </div>
     );
   }
+
+  const starting = startQuizAttempt.isPending;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-150">
       {/* Back button */}
       <button
         onClick={() => onNavigate('catalog')}
-        className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition"
+        className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#5c4738] hover:text-[#1c130d] transition cursor-pointer"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Assessments
       </button>
 
       {/* Hero Card */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+      <div className="bg-white border border-[#e8dfd5] rounded-3xl p-6 sm:p-8 shadow-sm relative overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
-          <div className="space-y-3 max-w-2xl">
-            <span className="inline-block px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-semibold">
-              {quiz.category_name}
+          <div className="space-y-4 max-w-2xl">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#b46927] bg-[#b07238]/10 border border-[#b07238]/20 px-3 py-1 rounded-full">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>{quiz.category_name}</span>
             </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-black text-[#1c130d] tracking-tight">
               {quiz.title}
             </h1>
-            <p className="text-sm text-slate-300 leading-relaxed">
-              {quiz.description || 'Test your proficiency with standardized questions and verified grading.'}
+            <p className="text-sm text-[#5c4738] leading-relaxed max-w-xl">
+              {quiz.description || 'Test your proficiency with standardized technical questions and verified server-authoritative grading.'}
             </p>
+            {startError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-700 font-medium">
+                {startError}
+              </div>
+            )}
           </div>
 
           {/* Start CTA Card */}
-          <div className="sm:w-64 bg-slate-800/80 border border-slate-700/60 rounded-2xl p-5 text-center flex flex-col justify-between shrink-0">
+          <div className="sm:w-64 bg-[#faf7f2] border border-[#e8dfd5] rounded-3xl p-5 text-center flex flex-col justify-between shrink-0 shadow-sm">
             <div>
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+              <span className="text-[10px] font-bold text-[#8a7465] uppercase tracking-wider block">
                 Attempts Remaining
               </span>
-              <span className="text-3xl font-black text-white mt-1 block">
+              <span className="text-3xl font-black text-[#1c130d] mt-1 block font-mono">
                 {Math.max(0, quiz.max_attempts - quiz.user_attempts_count)}{' '}
-                <span className="text-sm font-normal text-slate-400">/ {quiz.max_attempts}</span>
+                <span className="text-sm font-normal text-[#8a7465]">/ {quiz.max_attempts}</span>
               </span>
             </div>
 
-            <button
-              onClick={handleStartOrResume}
-              disabled={starting || !quiz.user_can_attempt}
-              className={`w-full mt-6 py-3 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition shadow-lg cursor-pointer ${
-                quiz.active_attempt_id
-                  ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-600/30'
+            <div className="mt-6">
+              <Button
+                variant={quiz.active_attempt_id ? 'primary' : quiz.user_can_attempt ? 'primary' : 'secondary'}
+                size="md"
+                className="w-full font-bold shadow-md"
+                disabled={starting || !quiz.user_can_attempt}
+                isLoading={starting}
+                onClick={handleStartOrResume}
+                leftIcon={
+                  quiz.active_attempt_id ? (
+                    <RotateCcw className="w-4 h-4" />
+                  ) : quiz.user_can_attempt ? (
+                    <Play className="w-4 h-4 fill-current" />
+                  ) : undefined
+                }
+              >
+                {quiz.active_attempt_id
+                  ? 'Resume Attempt'
                   : quiz.user_can_attempt
-                  ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/30'
-                  : 'bg-slate-700 text-slate-400 cursor-not-allowed shadow-none'
-              }`}
-            >
-              {starting ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : quiz.active_attempt_id ? (
-                <>
-                  <RotateCcw className="w-4 h-4" />
-                  <span>Resume Attempt</span>
-                </>
-              ) : quiz.user_can_attempt ? (
-                <>
-                  <Play className="w-4 h-4 fill-current" />
-                  <span>Start Assessment</span>
-                </>
-              ) : (
-                <span>Attempt Limit Reached</span>
-              )}
-            </button>
+                  ? 'Start Assessment'
+                  : 'Limit Reached'}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Assessment Parameters Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
-          <Clock className="w-5 h-5 text-indigo-400 mx-auto mb-1.5" />
-          <div className="text-xs text-slate-400">Time Limit</div>
-          <div className="text-lg font-bold text-white mt-0.5">
-            {Math.round(quiz.duration_seconds / 60)} minutes
+        <div className="bg-white rounded-2xl p-5 text-center border border-[#e8dfd5] shadow-sm">
+          <Clock className="w-5 h-5 text-[#b46927] mx-auto mb-2" />
+          <div className="text-[10px] font-bold uppercase tracking-wider text-[#8a7465]">Time Limit</div>
+          <div className="text-lg font-bold text-[#1c130d] mt-1 font-mono">
+            {Math.round(quiz.duration_seconds / 60)} min
           </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400 mx-auto mb-1.5" />
-          <div className="text-xs text-slate-400">Total Questions</div>
-          <div className="text-lg font-bold text-white mt-0.5">
-            {quiz.question_count} Questions
+        <div className="bg-white rounded-2xl p-5 text-center border border-[#e8dfd5] shadow-sm">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600 mx-auto mb-2" />
+          <div className="text-[10px] font-bold uppercase tracking-wider text-[#8a7465]">Questions</div>
+          <div className="text-lg font-bold text-[#1c130d] mt-1 font-mono">
+            {quiz.question_count}
           </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
-          <Trophy className="w-5 h-5 text-amber-400 mx-auto mb-1.5" />
-          <div className="text-xs text-slate-400">Passing Grade</div>
-          <div className="text-lg font-bold text-white mt-0.5">
+        <div className="bg-white rounded-2xl p-5 text-center border border-[#e8dfd5] shadow-sm">
+          <Trophy className="w-5 h-5 text-amber-600 mx-auto mb-2" />
+          <div className="text-[10px] font-bold uppercase tracking-wider text-[#8a7465]">Pass Score</div>
+          <div className="text-lg font-bold text-[#1c130d] mt-1 font-mono">
             {quiz.passing_percentage}%
           </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
-          <Award className="w-5 h-5 text-violet-400 mx-auto mb-1.5" />
-          <div className="text-xs text-slate-400">Total Points</div>
-          <div className="text-lg font-bold text-white mt-0.5">
-            {quiz.total_marks} Marks
+        <div className="bg-white rounded-2xl p-5 text-center border border-[#e8dfd5] shadow-sm">
+          <Award className="w-5 h-5 text-[#b46927] mx-auto mb-2" />
+          <div className="text-[10px] font-bold uppercase tracking-wider text-[#8a7465]">Total Marks</div>
+          <div className="text-lg font-bold text-[#1c130d] mt-1 font-mono">
+            {quiz.total_marks}
           </div>
         </div>
       </div>
 
       {/* Assessment Guidelines & Rules */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-4">
-        <h2 className="text-lg font-bold text-white flex items-center gap-2">
-          <ShieldCheck className="w-5 h-5 text-indigo-400" />
-          Examination Guidelines & Assessment Rules
+      <div className="bg-white rounded-3xl p-6 sm:p-8 space-y-5 border border-[#e8dfd5] shadow-sm">
+        <h2 className="text-xs font-bold text-[#1c130d] uppercase tracking-wider flex items-center gap-2 border-b border-[#e8dfd5] pb-4">
+          <Info className="w-4 h-4 text-[#b46927]" />
+          Examination Integrity & Guidelines
         </h2>
-        <ul className="space-y-3 text-sm text-slate-300">
-          <li className="flex items-start gap-2.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-2 shrink-0" />
-            <span>
-              <strong>Server-Authoritative Clock:</strong> The countdown timer is computed by the assessment server. Changing local browser time will not extend testing duration.
-            </span>
+        <ul className="space-y-3.5 text-xs text-[#5c4738] leading-relaxed">
+          <li className="flex items-start gap-3">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#b46927] mt-1.5 shrink-0" />
+            <div>
+              <strong className="text-[#1c130d]">Server-Authoritative Timing:</strong> The countdown timer is strictly verified and enforced by the backend server. Modifying local clocks will not extend testing duration.
+            </div>
           </li>
-          <li className="flex items-start gap-2.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-2 shrink-0" />
-            <span>
-              <strong>Autosave:</strong> Every choice is synchronized to the assessment server in real-time. You can safely navigate between questions and refresh your browser.
-            </span>
+          <li className="flex items-start gap-3">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#b46927] mt-1.5 shrink-0" />
+            <div>
+              <strong className="text-[#1c130d]">Continuous Autosave:</strong> Every choice is debounced and synchronized with exponential backoff. In the event of a momentary network dropout, saves pause safely and resume on reconnect.
+            </div>
           </li>
-          <li className="flex items-start gap-2.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-2 shrink-0" />
-            <span>
-              <strong>Negative Marking:</strong>{' '}
+          <li className="flex items-start gap-3">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#b46927] mt-1.5 shrink-0" />
+            <div>
+              <strong className="text-[#1c130d]">Negative Marking Policy:</strong>{' '}
               {quiz.negative_marking_enabled ? (
-                <span className="text-rose-300 font-semibold">
-                  Enabled (-{quiz.negative_mark_value} mark per incorrect answer). Unanswered questions carry no penalty.
+                <span className="text-rose-700 font-semibold">
+                  Enabled (-{quiz.negative_mark_value} marks per incorrect answer). Unanswered questions receive 0 marks with no penalty.
                 </span>
               ) : (
-                <span className="text-emerald-300 font-semibold">
-                  Disabled. There is no penalty for incorrect answers.
+                <span className="text-emerald-700 font-semibold">
+                  Disabled. No negative penalty for incorrect answers.
                 </span>
               )}
-            </span>
+            </div>
           </li>
-          <li className="flex items-start gap-2.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-2 shrink-0" />
-            <span>
-              <strong>Certification:</strong> Scoring {quiz.passing_percentage}% or higher generates an official verifiable certificate on your profile.
-            </span>
+          <li className="flex items-start gap-3">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#b46927] mt-1.5 shrink-0" />
+            <div>
+              <strong className="text-[#1c130d]">Verifiable Credential:</strong> Achieving {quiz.passing_percentage}% or higher generates an immutable verified certificate.
+            </div>
           </li>
         </ul>
       </div>

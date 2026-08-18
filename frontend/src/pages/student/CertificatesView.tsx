@@ -1,42 +1,35 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { api } from '../../api/client';
 import { Certificate } from '../../types';
-import { 
-  Award, 
-  CheckCircle2, 
-  Download, 
-  ExternalLink, 
-  HelpCircle, 
-  Printer, 
-  Search, 
-  ShieldCheck, 
-  Sparkles, 
-  X 
+import {
+  Award,
+  CheckCircle2,
+  Printer,
+  ShieldCheck,
+  X,
 } from 'lucide-react';
+import { useCertificatesQuery } from '../../hooks/useCertificates';
+import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Badge } from '../../components/ui/Badge';
+import { Modal } from '../../components/ui/Modal';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { Skeleton } from '../../components/ui/Skeleton';
+
+interface VerificationResult {
+  recipient_name?: string;
+  quiz_title?: string;
+  percentage?: number;
+  issue_date?: string;
+}
 
 export const CertificatesView: React.FC = () => {
-  const [certificates, setCertificates] = useState<Certificate[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: certificates = [], isLoading: loading } = useCertificatesQuery();
   const [verifyCode, setVerifyCode] = useState('');
-  const [verifyResult, setVerifyResult] = useState<any>(null);
+  const [verifyResult, setVerifyResult] = useState<VerificationResult | null>(null);
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyError, setVerifyError] = useState<string | null>(null);
   const [selectedCert, setSelectedCert] = useState<Certificate | null>(null);
-
-  const fetchCertificates = async () => {
-    try {
-      const data = await api.get<Certificate[]>('/certificates/my');
-      setCertificates(data);
-    } catch (err) {
-      console.error('Failed to load certificates:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCertificates();
-  }, []);
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,25 +39,27 @@ export const CertificatesView: React.FC = () => {
     setVerifyResult(null);
 
     try {
-      const res = await api.get(`/certificates/verify/${encodeURIComponent(verifyCode.trim())}`);
+      const res = await api.get<VerificationResult>(`/certificates/verify/${encodeURIComponent(verifyCode.trim())}`);
       setVerifyResult(res);
-    } catch (err: any) {
-      setVerifyError(err.message || 'Invalid or unverified certificate code');
+    } catch (err: unknown) {
+      const errObj = err as Error | undefined;
+      setVerifyError(errObj?.message || 'Invalid or unverified certificate code');
     } finally {
       setVerifyLoading(false);
     }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-150">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-[#38281e]">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
-            <Award className="w-8 h-8 text-emerald-400" />
+          <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Achievements & Credentials</span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#faf4ee] tracking-tight flex items-center gap-2 mt-1">
+            <Award className="w-7 h-7 text-emerald-400" />
             Verified Certificates
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-[#cbb8a9] mt-2 max-w-xl">
             Official verifiable credentials issued upon achieving passing marks on platform assessments.
           </p>
         </div>
@@ -76,155 +71,173 @@ export const CertificatesView: React.FC = () => {
             value={verifyCode}
             onChange={(e) => setVerifyCode(e.target.value)}
             placeholder="Verify Code: CERT-XXXX-XXXX"
-            className="w-full px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-4 py-2.5 bg-[#110c09] border border-[#38281e] rounded-xl text-[#faf4ee] text-xs font-mono focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 placeholder:text-[#887467] shadow-inner"
           />
-          <button
+          <Button
+            variant="primary"
+            size="sm"
             type="submit"
-            disabled={verifyLoading}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shrink-0 transition"
+            className="bg-emerald-600 hover:bg-emerald-500 border-emerald-500/40"
+            isLoading={verifyLoading}
           >
-            {verifyLoading ? 'Verifying...' : 'Verify'}
-          </button>
+            Verify
+          </Button>
         </form>
       </div>
 
       {/* Verification Result Banner */}
       {verifyResult && (
-        <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
-            <div className="text-xs">
-              <span className="font-bold text-white block">Certificate Authenticated Successfully!</span>
-              <span className="text-slate-300">
-                Awarded to <strong>{verifyResult.recipient_name}</strong> for <strong>{verifyResult.quiz_title}</strong> with score <strong>{verifyResult.percentage}%</strong> on {new Date(verifyResult.issue_date).toLocaleDateString()}.
+        <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-start sm:items-center justify-between gap-4 shadow-sm animate-in fade-in">
+          <div className="flex items-start sm:items-center gap-3">
+            <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0 mt-0.5 sm:mt-0" />
+            <div className="text-sm">
+              <span className="font-bold text-emerald-400 block tracking-tight">Certificate Authenticated Successfully</span>
+              <span className="text-[#cbb8a9] mt-1 block leading-relaxed">
+                Awarded to <strong className="text-[#faf4ee]">{verifyResult.recipient_name}</strong> for <strong className="text-[#faf4ee]">{verifyResult.quiz_title}</strong> with score <strong className="text-[#faf4ee] font-mono">{verifyResult.percentage}%</strong> on <strong className="text-[#faf4ee] font-mono">{verifyResult.issue_date ? new Date(verifyResult.issue_date).toLocaleDateString() : 'N/A'}</strong>.
               </span>
             </div>
           </div>
-          <button onClick={() => setVerifyResult(null)} className="text-slate-400 hover:text-white">
-            <X className="w-4 h-4" />
+          <button onClick={() => setVerifyResult(null)} className="text-[#887467] hover:text-[#faf4ee] shrink-0 cursor-pointer p-1">
+            <X className="w-5 h-5" />
           </button>
         </div>
       )}
 
       {verifyError && (
-        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-between gap-4 text-xs text-rose-300">
-          <span>{verifyError}</span>
-          <button onClick={() => setVerifyError(null)} className="text-slate-400 hover:text-white">
-            <X className="w-4 h-4" />
+        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-between gap-4 text-xs text-rose-300 shadow-sm animate-in fade-in">
+          <span className="font-semibold">{verifyError}</span>
+          <button onClick={() => setVerifyError(null)} className="text-[#887467] hover:text-[#faf4ee] p-1 cursor-pointer">
+            <X className="w-5 h-5" />
           </button>
         </div>
       )}
 
       {/* Certificates Grid */}
       {loading ? (
-        <div className="flex items-center justify-center min-h-[40vh]">
-          <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="assess-surface rounded-2xl p-6 space-y-4 border border-[#38281e]">
+              <div className="flex justify-between items-center">
+                <Skeleton variant="circular" width="40px" height="40px" />
+                <Skeleton variant="text" width="90px" height="20px" />
+              </div>
+              <Skeleton variant="text" width="80%" height="22px" />
+              <Skeleton variant="text" width="100%" height="16px" />
+              <div className="flex justify-between items-center pt-4 border-t border-[#38281e]">
+                <Skeleton variant="text" width="80px" height="14px" />
+                <Skeleton variant="rectangular" width="100px" height="32px" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : certificates.length === 0 ? (
-        <div className="text-center py-16 bg-slate-900 border border-slate-800 rounded-3xl p-8">
-          <Award className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-lg font-bold text-white mb-1">No Certificates Earned Yet</h3>
-          <p className="text-sm text-slate-400 max-w-sm mx-auto">
-            Pass any published assessment with the required grade to receive a verifiable digital certificate.
-          </p>
-        </div>
+        <EmptyState
+          icon={<Award className="w-8 h-8" />}
+          title="No Certificates Earned Yet"
+          description="Pass any published assessment with the required pass score to receive a verifiable digital credential."
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {certificates.map((cert) => (
-            <div
+            <Card
               key={cert.id}
-              className="bg-slate-900 border border-slate-800 hover:border-emerald-500/40 rounded-3xl p-6 shadow-xl relative overflow-hidden flex flex-col justify-between space-y-6"
+              variant="interactive"
+              className="hover:border-emerald-500/30 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-6 group border border-[#38281e]"
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                    <ShieldCheck className="w-6 h-6" />
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400">
+                    <ShieldCheck className="w-5 h-5" />
                   </div>
-                  <span className="text-[11px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
+                  <Badge variant="success" size="sm">
                     {cert.percentage}% Verified
-                  </span>
+                  </Badge>
                 </div>
 
                 <div>
-                  <h3 className="text-base font-bold text-white tracking-tight">{cert.quiz_title}</h3>
-                  <div className="text-xs text-slate-400 mt-1">Recipient: {cert.user_name}</div>
-                  <div className="text-[11px] font-mono text-slate-500 mt-2 bg-slate-800/80 p-2 rounded-lg break-all">
-                    Code: {cert.certificate_code}
+                  <h3 className="text-base font-bold text-[#faf4ee] tracking-tight group-hover:text-emerald-400 transition-colors">
+                    {cert.quiz_title}
+                  </h3>
+                  <div className="text-xs text-[#cbb8a9] mt-1 font-medium">Recipient: <span className="text-[#faf4ee]">{cert.user_name}</span></div>
+                  <div className="text-[10px] font-mono text-[#cbb8a9] mt-3 bg-[#110c09] border border-[#38281e] p-2.5 rounded-lg break-all">
+                    Code: <span className="text-emerald-400 font-bold">{cert.certificate_code}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-slate-800 flex items-center justify-between text-xs">
-                <span className="text-slate-500">{new Date(cert.issued_at).toLocaleDateString()}</span>
-                <button
+              <div className="pt-4 border-t border-[#38281e]/80 flex items-center justify-between text-xs">
+                <span className="text-[#887467] font-mono text-[11px]">{new Date(cert.issued_at).toLocaleDateString()}</span>
+                <Button
+                  variant="glass"
+                  size="sm"
                   onClick={() => setSelectedCert(cert)}
-                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold shadow-md transition cursor-pointer"
                 >
                   View Credential
-                </button>
+                </Button>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
 
       {/* Printable Certificate Modal */}
       {selectedCert && (
-        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-8 shadow-2xl space-y-6 relative">
-            <button
-              onClick={() => setSelectedCert(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
+        <Modal
+          isOpen={true}
+          onClose={() => setSelectedCert(null)}
+          title="Digital Credential Certificate"
+          subtitle="Verifiable cryptographic proof of assessment completion."
+          maxWidth="2xl"
+        >
+          <div className="space-y-6">
             {/* Certificate Canvas */}
-            <div className="border-4 border-double border-amber-500/40 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 p-8 rounded-2xl text-center space-y-6">
-              <div className="flex items-center justify-center gap-2">
-                <ShieldCheck className="w-8 h-8 text-amber-400" />
-                <span className="text-sm font-mono tracking-widest text-amber-400 uppercase font-bold">
+            <div className="border-4 border-double border-[#d4a373]/40 bg-gradient-to-b from-[#140e0b] via-[#1c140f] to-[#140e0b] p-6 sm:p-10 rounded-2xl text-center space-y-8 shadow-2xl">
+              <div className="flex items-center justify-center gap-3">
+                <ShieldCheck className="w-8 h-8 text-[#d4a373]" />
+                <span className="text-xs sm:text-sm font-mono tracking-widest text-[#d4a373] uppercase font-bold">
                   ApexAssess Verified Credential
                 </span>
               </div>
 
-              <div className="space-y-1">
-                <div className="text-xs uppercase tracking-widest text-slate-400 font-serif">This certifies that</div>
-                <div className="text-2xl font-black text-white font-serif">{selectedCert.user_name}</div>
-                <div className="text-xs text-slate-400">has successfully passed the comprehensive assessment</div>
+              <div className="space-y-3">
+                <div className="text-[11px] sm:text-xs uppercase tracking-[0.2em] text-[#cbb8a9] font-serif">This certifies that</div>
+                <div className="text-3xl sm:text-4xl font-black text-[#faf4ee] font-serif tracking-tight">{selectedCert.user_name}</div>
+                <div className="text-xs sm:text-sm text-[#cbb8a9] max-w-sm mx-auto">has successfully passed the comprehensive assessment</div>
               </div>
 
-              <div className="text-xl font-bold text-amber-300 font-serif px-4 py-2 bg-amber-500/10 rounded-xl inline-block border border-amber-500/20">
+              <div className="text-xl sm:text-2xl font-bold text-[#d4a373] font-serif px-6 py-3 bg-[#c89666]/10 rounded-xl inline-block border border-[#c89666]/30 shadow-inner">
                 {selectedCert.quiz_title}
               </div>
 
-              <div className="flex items-center justify-between text-xs text-slate-400 border-t border-amber-500/20 pt-4 font-mono">
-                <div>
-                  <span className="block text-[10px] text-slate-500">SCORE</span>
-                  <strong className="text-white">{selectedCert.percentage}%</strong>
+              <div className="flex flex-col sm:flex-row items-center justify-between text-xs text-[#cbb8a9] border-t border-[#38281e] pt-6 mt-4 gap-4 sm:gap-0 font-mono">
+                <div className="text-center sm:text-left">
+                  <span className="block text-[10px] text-[#887467] mb-1">SCORE</span>
+                  <strong className="text-[#faf4ee] text-sm">{selectedCert.percentage}%</strong>
                 </div>
-                <div>
-                  <span className="block text-[10px] text-slate-500">DATE</span>
-                  <strong className="text-white">{new Date(selectedCert.issued_at).toLocaleDateString()}</strong>
+                <div className="text-center">
+                  <span className="block text-[10px] text-[#887467] mb-1">DATE</span>
+                  <strong className="text-[#faf4ee] text-sm">{new Date(selectedCert.issued_at).toLocaleDateString()}</strong>
                 </div>
-                <div>
-                  <span className="block text-[10px] text-slate-500">VERIFICATION CODE</span>
-                  <strong className="text-amber-400">{selectedCert.certificate_code}</strong>
+                <div className="text-center sm:text-right">
+                  <span className="block text-[10px] text-[#887467] mb-1">VERIFICATION CODE</span>
+                  <strong className="text-[#d4a373] tracking-wider text-sm">{selectedCert.certificate_code}</strong>
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3">
-              <button
+            <div className="flex justify-end gap-3 pt-2">
+              <Button
+                variant="primary"
+                size="md"
+                className="bg-emerald-600 hover:bg-emerald-500 border-emerald-500/40"
+                leftIcon={<Printer className="w-4 h-4" />}
                 onClick={() => window.print()}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center gap-2 transition"
               >
-                <Printer className="w-4 h-4" />
                 Print / Save PDF
-              </button>
+              </Button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

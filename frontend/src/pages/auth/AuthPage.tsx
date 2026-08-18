@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { Shield, Lock, Mail, User as UserIcon, ArrowRight, AlertCircle, CheckCircle2, Eye, EyeOff, Terminal, Sparkles, BookOpen, Clock, Award } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import { Shield, Lock, Mail, User as UserIcon, ArrowRight, AlertCircle, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { api } from '../../api/client';
+import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Modal } from '../../components/ui/Modal';
+import heroImage from '../../assets/assessment_hero.jpg';
 
 export const AuthPage: React.FC = () => {
   const { login, register } = useAuth();
@@ -28,8 +33,9 @@ export const AuthPage: React.FC = () => {
       } else {
         await login(email, password);
       }
-    } catch (err: any) {
-      setError(err.message || 'Authentication failed. Please verify your credentials.');
+    } catch (err: unknown) {
+      const errObj = err as Error | undefined;
+      setError(errObj?.message || 'Authentication failed. Please verify your credentials.');
     } finally {
       setLoading(false);
     }
@@ -43,95 +49,96 @@ export const AuthPage: React.FC = () => {
     try {
       const res = await api.post<{ message: string }>('/auth/forgot-password', { email: forgotEmail });
       setForgotMsg({ text: res.message });
-    } catch (err: any) {
-      setForgotMsg({ text: err.message || 'Failed to request password reset.', isError: true });
+    } catch (err: unknown) {
+      const errObj = err as Error | undefined;
+      setForgotMsg({ text: errObj?.message || 'Failed to request password reset.', isError: true });
     } finally {
       setForgotLoading(false);
     }
   };
 
-  const fillDemo = (role: 'admin' | 'alice' | 'bob') => {
+  const fillDemo = async (role: 'admin' | 'alice' | 'bob', autoLogin = true) => {
+    let demoEmail = '';
+    let demoPassword = '';
     if (role === 'admin') {
-      setEmail('admin@assessment.io');
-      setPassword('Admin@12345');
+      demoEmail = 'admin@assessment.io';
+      demoPassword = 'Admin@12345';
     } else if (role === 'alice') {
-      setEmail('alice@student.io');
-      setPassword('Student@12345');
+      demoEmail = 'alice@student.io';
+      demoPassword = 'Student@12345';
     } else {
-      setEmail('bob@student.io');
-      setPassword('Student@12345');
+      demoEmail = 'bob@student.io';
+      demoPassword = 'Student@12345';
     }
+    setEmail(demoEmail);
+    setPassword(demoPassword);
     setIsRegister(false);
     setError(null);
+
+    if (autoLogin) {
+      setLoading(true);
+      try {
+        await login(demoEmail, demoPassword);
+      } catch (err: unknown) {
+        const errObj = err as Error | undefined;
+        setError(errObj?.message || 'Authentication failed. Please verify your credentials.');
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-slate-100 flex flex-col lg:flex-row relative">
-      {/* Background Subtle Elements */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(37,99,235,0.12),rgba(255,255,255,0))] pointer-events-none" />
+    <div className="min-h-screen bg-[#faf7f2] text-[#1c130d] flex flex-col lg:flex-row relative selection:bg-[#b07238]/20">
+      {/* Background Subtle Warm Caramel Glow */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(180,105,39,0.08),rgba(250,247,242,0))] pointer-events-none" />
+      <div className="absolute -top-40 -left-40 w-96 h-96 bg-[#b07238]/5 rounded-full blur-3xl pointer-events-none" />
 
       {/* Left Feature Showcase (Desktop) */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 lg:p-16 border-r border-slate-800/80 bg-[#090e1a]/60 backdrop-blur-md relative z-10">
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 lg:p-16 border-r border-[#e8dfd5] bg-[#fbf8f4]/90 backdrop-blur-md relative z-10">
         <div>
           {/* Brand Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <Shield className="w-5 h-5 text-white" />
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#b07238] via-[#c89666] to-[#8c531e] flex items-center justify-center shadow-md shadow-[#b07238]/20 border border-[#dfb58a]/40">
+              <Shield className="w-6 h-6 text-white" />
             </div>
             <div>
-              <span className="text-xl font-bold tracking-tight text-white">Apex<span className="text-blue-500">Assess</span></span>
-              <span className="ml-2 px-2 py-0.5 text-[10px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full">v1.0 Pro</span>
+              <span className="text-2xl font-black tracking-tight text-[#1c130d]">Apex<span className="text-[#b46927]">Assess</span></span>
+              <span className="ml-2.5 px-2.5 py-0.5 text-[10px] font-bold bg-[#b07238]/10 text-[#b46927] border border-[#b07238]/25 rounded-full font-mono">v2.0 Pro</span>
             </div>
           </div>
 
           {/* Hero Typography */}
-          <div className="mt-16 max-w-lg">
-            <h1 className="text-3xl lg:text-4xl font-extrabold text-white leading-tight tracking-tight">
+          <div className="mt-12 max-w-lg">
+            <h1 className="text-3xl lg:text-4xl font-extrabold text-[#1c130d] leading-tight tracking-tight">
               Enterprise Assessment & Exam Governance Platform
             </h1>
-            <p className="mt-4 text-base text-slate-400 leading-relaxed">
+            <p className="mt-4 text-sm text-[#5c4738] leading-relaxed">
               Engineered with server-authoritative timer synchronization, immutable assessment versioning, negative marking, and real-time autosave persistence.
             </p>
           </div>
 
-          {/* Capability Highlights */}
-          <div className="mt-12 space-y-4 max-w-lg">
-            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-900/60 border border-slate-800">
-              <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                <Clock className="w-4 h-4 text-blue-400" />
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold text-white">Server-Authoritative Timing</h4>
-                <p className="text-xs text-slate-400 mt-0.5">Tamper-proof server clock countdown with automated expiry scoring and grace-period handling.</p>
-              </div>
+          {/* Visual Hero Showcase Banner */}
+          <div className="mt-8 relative rounded-2xl overflow-hidden border border-[#e8dfd5] bg-white shadow-xl group max-w-lg coffee-card-hover">
+            <div className="aspect-[4/3] w-full overflow-hidden relative">
+              <img
+                src={heroImage}
+                alt="ApexAssess Platform Architecture"
+                className="w-full h-full object-cover object-center transform transition duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-50" />
             </div>
 
-            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-900/60 border border-slate-800">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                <Shield className="w-4 h-4 text-emerald-400" />
+            <div className="p-4 bg-white/95 backdrop-blur-md border-t border-[#e8dfd5] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-sm shadow-emerald-500/50" />
+                <span className="text-xs font-bold text-[#1c130d]">Authoritative Exam Infrastructure</span>
               </div>
-              <div>
-                <h4 className="text-sm font-semibold text-white">OWASP Top 10 API Hardened</h4>
-                <p className="text-xs text-slate-400 mt-0.5">Strict object-level authorization (BOLA prevention), rate limiting, and zero answer key exposure.</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-900/60 border border-slate-800">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0 mt-0.5">
-                <Award className="w-4 h-4 text-amber-400" />
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold text-white">Verifiable Credentials</h4>
-                <p className="text-xs text-slate-400 mt-0.5">Automated digital certificate generation with public cryptographic validation.</p>
-              </div>
+              <span className="text-[10px] font-mono text-[#b46927] bg-[#b07238]/10 border border-[#b07238]/25 px-2.5 py-1 rounded-lg font-bold">
+                Cryptographic Validation
+              </span>
             </div>
           </div>
-        </div>
-
-        {/* Footer info */}
-        <div className="pt-8 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-          <span>PostgreSQL 16+ · FastAPI · React 19</span>
-          <span className="font-mono text-slate-400">REST API /v1</span>
         </div>
       </div>
 
@@ -140,23 +147,23 @@ export const AuthPage: React.FC = () => {
         <div className="w-full max-w-md">
           {/* Mobile Brand Header */}
           <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <Shield className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#c89666] to-[#7f5539] flex items-center justify-center shadow-lg shadow-[#c89666]/25 border border-[#e6ccb2]/40">
+              <Shield className="w-5 h-5 text-[#17110d]" />
             </div>
             <div>
-              <span className="text-xl font-bold tracking-tight text-white">Apex<span className="text-blue-500">Assess</span></span>
+              <span className="text-xl font-bold tracking-tight text-[#faf4ee]">Apex<span className="text-[#d4a373]">Assess</span></span>
             </div>
           </div>
 
           {/* Form Card */}
-          <div className="bg-[#0b1220] border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl shadow-black/40">
+          <Card variant="raised" className="p-6 sm:p-8 shadow-xl border border-[#e8dfd5] bg-white">
             {/* Header Tabs */}
-            <div className="flex p-1 bg-slate-900/90 rounded-xl border border-slate-800 mb-6">
+            <div className="flex p-1 bg-[#f5efe8] rounded-xl border border-[#e8dfd5] mb-6">
               <button
                 type="button"
                 onClick={() => { setIsRegister(false); setError(null); }}
-                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
-                  !isRegister ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer ${
+                  !isRegister ? 'bg-gradient-to-r from-[#b07238] to-[#d4a373] text-white font-black shadow-md shadow-[#b07238]/20' : 'text-[#5c4738] hover:text-[#1c130d]'
                 }`}
               >
                 Sign In
@@ -164,26 +171,21 @@ export const AuthPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => { setIsRegister(true); setError(null); }}
-                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
-                  isRegister ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer ${
+                  isRegister ? 'bg-gradient-to-r from-[#b07238] to-[#d4a373] text-white font-black shadow-md shadow-[#b07238]/20' : 'text-[#5c4738] hover:text-[#1c130d]'
                 }`}
               >
                 Create Account
               </button>
             </div>
 
-            {/* Error Banner with helpful diagnostics */}
+            {/* Error Banner */}
             {error && (
-              <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-3">
-                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-3">
+                <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <div className="font-semibold text-rose-200">Authentication Alert</div>
+                  <div className="font-bold text-rose-900">Authentication Alert</div>
                   <div>{error}</div>
-                  {error.includes('offline') || error.includes('backend') || error.includes('Gateway') ? (
-                    <div className="mt-2 p-2 rounded bg-slate-900/80 border border-slate-800 font-mono text-[11px] text-slate-300">
-                      💡 Tip: Run <span className="text-blue-400">uvicorn backend.app.main:app --reload --port 8000</span> in your terminal.
-                    </div>
-                  ) : null}
                 </div>
               </div>
             )}
@@ -191,56 +193,41 @@ export const AuthPage: React.FC = () => {
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               {isRegister && (
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Full Name</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                      <UserIcon className="w-4 h-4" />
-                    </div>
-                    <input
-                      type="text"
-                      required
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Jane Doe"
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white text-sm placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                    />
-                  </div>
-                </div>
+                <Input
+                  label="Full Name"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Jane Doe"
+                  leftIcon={<UserIcon className="w-4 h-4" />}
+                />
               )}
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Email Address</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <Mail className="w-4 h-4" />
-                  </div>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@assessment.io"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white text-sm placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                  />
-                </div>
-              </div>
+              <Input
+                label="Email Address"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@assessment.io"
+                leftIcon={<Mail className="w-4 h-4" />}
+              />
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Password</label>
+                  <label className="block text-xs font-semibold text-[#5c4738] uppercase tracking-wider">Password</label>
                   {!isRegister && (
                     <button
                       type="button"
                       onClick={() => { setForgotModal(true); setForgotMsg(null); setForgotEmail(email); }}
-                      className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                      className="text-xs text-[#b46927] hover:text-[#8c531e] font-semibold transition-colors cursor-pointer"
                     >
                       Forgot password?
                     </button>
                   )}
                 </div>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#8a7465]">
                     <Lock className="w-4 h-4" />
                   </div>
                   <input
@@ -249,113 +236,115 @@ export const AuthPage: React.FC = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••••••"
-                    className="w-full pl-10 pr-10 py-2.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white text-sm placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                    className="w-full pl-10 pr-10 py-2.5 bg-white border border-[#e8dfd5] rounded-xl text-[#1c130d] text-xs sm:text-sm placeholder-[#9e897b] focus:outline-none focus:border-[#b46927] focus:ring-1 focus:ring-[#b46927] transition-colors shadow-sm"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200 transition-colors"
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#8a7465] hover:text-[#1c130d] transition-colors cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full mt-2 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 font-semibold text-white text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 transition-all disabled:opacity-50 cursor-pointer"
-              >
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <span>{isRegister ? 'Complete Registration' : 'Sign In'}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
+              <div className="pt-2">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="md"
+                  className="w-full shadow-md shadow-[#b07238]/20 hover:shadow-lg hover:shadow-[#b07238]/30 transition-all font-bold"
+                  isLoading={loading}
+                  rightIcon={<ArrowRight className="w-4 h-4" />}
+                >
+                  {isRegister ? 'Complete Registration' : 'Sign In'}
+                </Button>
+              </div>
             </form>
 
             {/* Quick Demo Credentials Switcher */}
-            <div className="mt-6 pt-5 border-t border-slate-800/80">
-              <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-3 font-medium">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>Instant Demo Access</span>
+            <div className="mt-6 pt-5 border-t border-[#e8dfd5]">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#5c4738]">
+                  <Sparkles className="w-3.5 h-3.5 text-[#b46927]" />
+                  <span>Instant 1-Click Demo Login</span>
+                </div>
+                <span className="text-[9px] text-[#8a7465] font-mono">Select Role</span>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 <button
                   type="button"
-                  onClick={() => fillDemo('admin')}
-                  className="px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-xs text-slate-200 font-medium flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  disabled={loading}
+                  onClick={() => fillDemo('admin', true)}
+                  className="px-3.5 py-2.5 rounded-xl bg-[#f5efe8] hover:bg-[#ede4d8] active:scale-[0.98] border border-[#e8dfd5] hover:border-[#b46927]/50 text-xs text-[#1c130d] font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
                 >
-                  <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
+                  <span className="w-2 h-2 rounded-full bg-[#b46927] shrink-0 animate-pulse" />
                   <span>Admin Console</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => fillDemo('alice')}
-                  className="px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-xs text-slate-200 font-medium flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  disabled={loading}
+                  onClick={() => fillDemo('alice', true)}
+                  className="px-3.5 py-2.5 rounded-xl bg-[#f5efe8] hover:bg-[#ede4d8] active:scale-[0.98] border border-[#e8dfd5] hover:border-emerald-500/50 text-xs text-[#1c130d] font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
                 >
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
                   <span>Student Portal</span>
                 </button>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
       </div>
 
       {/* Forgot Password Modal */}
-      {forgotModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-[#0b1220] border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-white mb-2">Reset Password</h3>
-            <p className="text-xs text-slate-400 mb-4">
-              Enter your registered account email. A secure, single-use password reset token will be dispatched.
-            </p>
+      <Modal
+        isOpen={forgotModal}
+        onClose={() => setForgotModal(false)}
+        title="Reset Account Password"
+        subtitle="Enter your registered account email to receive a single-use reset token."
+        maxWidth="md"
+      >
+        <div className="space-y-4">
+          {forgotMsg && (
+            <div className={`p-3 rounded-xl text-xs ${
+              forgotMsg.isError ? 'bg-rose-500/10 border border-rose-500/30 text-rose-300' : 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
+            }`}>
+              {forgotMsg.text}
+            </div>
+          )}
 
-            {forgotMsg && (
-              <div className={`p-3 rounded-xl mb-4 text-xs ${
-                forgotMsg.isError ? 'bg-rose-500/10 border border-rose-500/30 text-rose-300' : 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
-              }`}>
-                {forgotMsg.text}
-              </div>
-            )}
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            <Input
+              label="Email Address"
+              type="email"
+              required
+              value={forgotEmail}
+              onChange={(e) => setForgotEmail(e.target.value)}
+              placeholder="admin@assessment.io"
+              leftIcon={<Mail className="w-4 h-4" />}
+            />
 
-            <form onSubmit={handleForgotPassword} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Email Address</label>
-                <input
-                  type="email"
-                  required
-                  value={forgotEmail}
-                  onChange={(e) => setForgotEmail(e.target.value)}
-                  placeholder="admin@assessment.io"
-                  className="w-full px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:border-blue-500"
-                />
-              </div>
-
-              <div className="flex gap-3 justify-end pt-2">
-                <button
-                  type="button"
-                  onClick={() => setForgotModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white bg-slate-900 border border-slate-800 hover:bg-slate-800"
-                >
-                  Close
-                </button>
-                <button
-                  type="submit"
-                  disabled={forgotLoading}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50"
-                >
-                  {forgotLoading ? 'Sending...' : 'Request Reset'}
-                </button>
-              </div>
-            </form>
-          </div>
+            <div className="flex justify-end gap-3 pt-3 border-t border-[#38281e]">
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
+                onClick={() => setForgotModal(false)}
+              >
+                Close
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                type="submit"
+                isLoading={forgotLoading}
+              >
+                Request Reset
+              </Button>
+            </div>
+          </form>
         </div>
-      )}
+      </Modal>
     </div>
   );
 };
