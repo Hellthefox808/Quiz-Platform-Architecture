@@ -1,0 +1,58 @@
+config {
+  type: "table",
+  schema: "quiz_platform_analytics",
+  tags: ["marts", "gold"],
+  description: "Gold analytical fact table for assessment attempts. Materialized with BigQuery partitioning on DATE(started_at_utc) and clustering on [status, quiz_id, user_id] for high-efficiency analytical queries and dashboard aggregations.",
+  bigquery: {
+    partitionBy: "DATE(started_at_utc)",
+    clusterBy: ["status", "quiz_id", "user_id"]
+  },
+  columns: {
+    attempt_id: "Primary key identifier for the attempt (UUID string)",
+    user_id: "Foreign key referencing dim_users",
+    quiz_id: "Foreign key referencing dim_quizzes",
+    quiz_version_id: "Version identifier of the quiz snapshot taken",
+    status: "Standardized attempt lifecycle status (CREATED, IN_PROGRESS, SUBMITTING, COMPLETED, EXPIRED, CANCELLED, ABANDONED)",
+    started_at_utc: "ISO UTC timestamp when attempt was started",
+    submitted_at_utc: "ISO UTC timestamp when attempt was submitted",
+    expires_at_utc: "ISO UTC timestamp when attempt timer expires",
+    duration_seconds: "Total active test duration in seconds (non-negative integer)",
+    total_marks: "Total possible marks for the attempt (non-negative float)",
+    score: "Obtained marks clamped to non-negative range (FLOAT64)",
+    percentage: "Normalized score percentage strictly clamped to [0.0, 100.0]",
+    passed: "Boolean flag indicating whether student passed the assessment",
+    is_orphaned: "Boolean flag indicating referential integrity status against dim_users and dim_quizzes",
+    user_role: "User role at the time of query execution",
+    quiz_title: "Title of the associated quiz",
+    ingested_at_utc: "Timestamp when record was materialized in Gold mart"
+  }
+}
+
+SELECT
+  a.attempt_id,
+  a.user_id,
+  a.quiz_id,
+  a.quiz_version_id,
+  a.status,
+  a.started_at_utc,
+  a.submitted_at_utc,
+  a.expires_at_utc,
+  a.duration_seconds,
+  a.total_marks,
+  a.score,
+  a.percentage,
+  a.passed,
+  (u.user_id IS NULL OR q.quiz_id IS NULL) AS is_orphaned,
+  u.role AS user_role,
+  q.title AS quiz_title,
+  a.ingested_at_utc
+FROM
+  ${ref("stg_assessment_attempts")} AS a
+LEFT JOIN
+  ${ref("dim_users")} AS u
+ON
+  a.user_id = u.user_id
+LEFT JOIN
+  ${ref("dim_quizzes")} AS q
+ON
+  a.quiz_id = q.quiz_id

@@ -1,0 +1,36 @@
+config {
+  type: "table",
+  schema: "quiz_platform_analytics",
+  tags: ["marts", "gold"],
+  description: "Gold analytical fact table for security, operational, and lifecycle audit events.",
+  bigquery: {
+    partitionBy: "DATE(created_at_utc)",
+    clusterBy: ["action", "user_id", "resource_type"]
+  },
+  columns: {
+    audit_id: "Unique identifier for the audit event (UUID string)",
+    user_id: "Identifier of the user performing the action",
+    action: "Standardized audit event action",
+    resource_type: "Target entity type affected by the event",
+    resource_id: "Target entity identifier",
+    ip_address: "Client IP address recorded at event time",
+    user_agent: "Client HTTP user agent string",
+    details_json: "Parsed JSON structure of event-specific payload",
+    is_valid_json: "Boolean indicating whether details payload was valid JSON",
+    created_at_utc: "Normalized ISO UTC timestamp when event occurred"
+  }
+}
+
+SELECT
+  audit_id,
+  user_id,
+  action,
+  resource_type,
+  resource_id,
+  ip_address,
+  user_agent,
+  details_json,
+  is_valid_json,
+  created_at_utc
+FROM
+  ${ref("stg_audit_logs")}

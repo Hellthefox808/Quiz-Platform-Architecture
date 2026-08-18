@@ -1,0 +1,44 @@
+config {
+  type: "table",
+  schema: "quiz_platform_analytics",
+  tags: ["marts", "gold"],
+  description: "Gold analytical fact table for item-level assessment responses, student chosen options, accuracy scoring, and time expenditure telemetry.",
+  bigquery: {
+    partitionBy: "DATE(created_at_utc)",
+    clusterBy: ["attempt_id", "question_id", "is_correct"]
+  },
+  columns: {
+    response_id: "Primary key identifier for the response (UUID string)",
+    attempt_id: "Foreign key reference to parent assessment attempt",
+    question_id: "Foreign key reference to question item",
+    attempt_question_id: "Foreign key reference to attempt question snapshot",
+    selected_option_ids: "Array of selected option UUID identifiers (case-preserved, non-null)",
+    text_response: "Free-form text response if applicable",
+    is_correct: "Boolean indicator of whether response was scored correct",
+    marks_awarded: "Marks awarded for this item response (clamped to >= 0.0)",
+    time_spent_seconds: "Total time spent on this item in seconds (clamped to >= 0)",
+    question_text: "Extracted question prompt from question snapshot JSON",
+    question_marks: "Extracted baseline marks for this question item",
+    difficulty: "Extracted question difficulty rating (EASY, MEDIUM, HARD, EXPERT)",
+    is_snapshot_valid: "Boolean indicating whether frozen question snapshot was valid JSON",
+    created_at_utc: "Normalized ISO UTC timestamp when response was recorded"
+  }
+}
+
+SELECT
+  response_id,
+  attempt_id,
+  question_id,
+  attempt_question_id,
+  selected_option_ids,
+  text_response,
+  is_correct,
+  marks_awarded,
+  time_spent_seconds,
+  question_text,
+  question_marks,
+  difficulty,
+  is_snapshot_valid,
+  created_at_utc
+FROM
+  ${ref("stg_question_responses")}

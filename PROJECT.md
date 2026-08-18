@@ -75,11 +75,11 @@ The Quiz Platform data cleaning and quality engineering pipeline follows an ente
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
 | M0 | Survey & Architecture | Scope mapping, defect taxonomy, architecture design | none | DONE |
-| M1 | Source Anomaly Profiler (R1) | SQL audit queries, anomaly profiling engine, baseline reports | M0 | IN_PROGRESS |
-| M2 | Core Cleansing Pipeline (R2) | Staging, Silver transforms, Gold marts, BigQuery SQL/Dataform models | M1 | PLANNED |
-| M3 | Data Quality Assertions (R3) | Dataform SQLX assertions, non-null/FK/range/enum validation suite | M2 | PLANNED |
-| M4 | Verification & Dataplex (R4) | Null drift verification (<1%), 100% remediation audit, data dictionary | M3 | PLANNED |
-| M5 | E2E Testing & Hardening | Opaque-box E2E test suite (Tiers 1-4) + Adversarial stress testing (Tier 5) | Parallel / M4 | PLANNED |
+| M1 | Source Anomaly Profiler (R1) | SQL audit queries, anomaly profiling engine, baseline reports | M0 | DONE |
+| M2 | Core Cleansing Pipeline (R2) | Staging, Silver transforms, Gold marts, BigQuery SQL/Dataform models | M1 | DONE |
+| M3 | Data Quality Assertions (R3) | Dataform SQLX assertions, non-null/FK/range/enum validation suite | M2 | DONE |
+| M4 | Verification & Dataplex (R4) | Null drift verification (<1%), 100% remediation audit, data dictionary | M3 | DONE |
+| M5 | E2E Testing & Hardening | Opaque-box E2E test suite (Tiers 1-4) + Adversarial stress testing (Tier 5) | Parallel / M4 | DONE |
 
 ## Interface Contracts
 ### Raw Bronze -> Silver Intermediate
@@ -101,23 +101,31 @@ d:\QWERTYUIOP\data_cleaning_pipeline\
 │   │   ├── raw_attempts.sqlx
 │   │   ├── raw_responses.sqlx
 │   │   ├── raw_quizzes.sqlx
-│   │   └── raw_users.sqlx
+│   │   ├── raw_users.sqlx
+│   │   ├── raw_questions.sqlx
+│   │   ├── raw_question_options.sqlx
+│   │   ├── raw_results.sqlx
+│   │   └── raw_audit_logs.sqlx
 │   ├── staging/                      # Silver Layer (cleaning & normalization)
 │   │   ├── stg_assessment_attempts.sqlx
 │   │   ├── stg_question_responses.sqlx
+│   │   ├── stg_users.sqlx
+│   │   ├── stg_quizzes.sqlx
 │   │   └── stg_audit_logs.sqlx
 │   ├── marts/                        # Gold Layer (analytical fact & dim marts)
 │   │   ├── fct_assessment_attempts.sqlx
 │   │   ├── fct_question_responses.sqlx
 │   │   ├── dim_quizzes.sqlx
-│   │   └── dim_users.sqlx
+│   │   ├── dim_users.sqlx
+│   │   └── fct_audit_events.sqlx
 │   └── assertions/                   # Dataform Automated Assertions
 │       ├── assert_attempts_pk_unique_not_null.sqlx
 │       ├── assert_attempts_referential_integrity.sqlx
 │       ├── assert_attempts_percentage_bounds.sqlx
 │       ├── assert_attempts_status_valid_enum.sqlx
 │       ├── assert_responses_snapshot_valid_json.sqlx
-│       └── assert_attempts_timestamps_monotonic.sqlx
+│       ├── assert_attempts_timestamps_monotonic.sqlx
+│       └── assert_responses_option_array_no_nulls.sqlx
 ├── sql/
 │   ├── profiling/                    # BigQuery SQL Anomaly Profiling Scripts
 │   │   ├── 01_null_inflation_audit.sql
@@ -131,6 +139,8 @@ d:\QWERTYUIOP\data_cleaning_pipeline\
 │   │   ├── clean_assessment_attempts.sql
 │   │   ├── clean_question_responses.sql
 │   │   └── clean_audit_logs.sql
+│   ├── assertions/                   # Consolidated BigQuery SQL Assertion Query
+│   │   └── assert_all_data_quality_rules.sql
 │   └── verification/                 # Post-Transformation Verification Queries
 │       ├── verify_null_drift.sql
 │       ├── verify_defect_resolution.sql
@@ -143,6 +153,8 @@ d:\QWERTYUIOP\data_cleaning_pipeline\
 │   └── TRANSFORMATION_LOG.md         # Anomaly remediation & lineage documentation
 └── tests/
     ├── e2e_test_runner.py            # Comprehensive E2E test execution harness
+    ├── synthetic_data_generator.py   # Synthetic raw dataset generator (DEF-01..DEF-08)
+    ├── pipeline_engine.py            # Simulation engine for transforms & assertions
     ├── test_tier1_feature_coverage.py
     ├── test_tier2_boundaries_corners.py
     ├── test_tier3_cross_feature.py

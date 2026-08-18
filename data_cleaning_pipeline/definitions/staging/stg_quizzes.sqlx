@@ -1,0 +1,69 @@
+config {
+  type: "view",
+  schema: "quiz_platform_analytics",
+  tags: ["staging", "silver"],
+  description: "Silver staging model for quizzes catalog. Standardizes quiz titles, slugs, publication statuses, and normalizes audit timestamps.",
+  columns: {
+    quiz_id: "Primary key quiz UUID identifier",
+    title: "Sanitized quiz title",
+    slug: "URL-safe quiz identifier slug",
+    category_id: "Foreign key reference to category",
+    created_by: "Foreign key reference to author user ID",
+    status: "Normalized quiz publication status (DRAFT, PUBLISHED, ARCHIVED)",
+    created_at_utc: "Normalized ISO UTC timestamp of quiz creation",
+    updated_at_utc: "Normalized ISO UTC timestamp of latest quiz update"
+  }
+}
+
+WITH raw_extracted AS (
+  SELECT
+    TRIM(CAST(id AS STRING)) AS quiz_id,
+    TRIM(CAST(title AS STRING)) AS title,
+    LOWER(TRIM(CAST(slug AS STRING))) AS slug,
+    TRIM(CAST(category_id AS STRING)) AS category_id,
+    TRIM(CAST(created_by AS STRING)) AS created_by,
+    UPPER(TRIM(CAST(status AS STRING))) AS status_raw,
+    COALESCE(
+      SAFE.PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%E*SZ', CAST(created_at AS STRING)),
+      SAFE.PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%E*S%Ez', CAST(created_at AS STRING)),
+      SAFE.PARSE_TIMESTAMP('%Y-%m-%d %H:%M:%E*S', CAST(created_at AS STRING))
+    ) AS created_at_utc,
+    COALESCE(
+      SAFE.PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%E*SZ', CAST(updated_at AS STRING)),
+      SAFE.PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%E*S%Ez', CAST(updated_at AS STRING)),
+      SAFE.PARSE_TIMESTAMP('%Y-%m-%d %H:%M:%E*S', CAST(updated_at AS STRING))
+    ) AS updated_at_utc
+  FROM
+    ${ref("raw_quizzes")}
+  WHERE
+    id IS NOT NULL AND TRIM(CAST(id AS STRING)) != ''
+),
+
+deduplicated AS (
+  SELECT
+    *
+  FROM
+    raw_extracted
+  QUALIFY
+    ROW_NUMBER() OVER(
+      PARTITION BY quiz_id
+      ORDER BY
+        COALESCE(updated_at_utc, created_at_utc, TIMESTAMP('1970-01-01 00:00:00 UTC')) DESC,
+        quiz_id DESC
+    ) = 1
+)
+
+SELECT
+  quiz_id,
+  title,
+  slug,
+  category_id,
+  created_by,
+  CASE
+    WHEN status_raw IN ('DRAFT', 'PUBLISHED', 'ARCHIVED') THEN status_raw
+    ELSE 'DRAFT'
+  END AS status,
+  created_at_utc,
+  updated_at_utc
+FROM
+  deduplicated

@@ -1,0 +1,7 @@
+config {
+  type: "declaration",
+  database: "quiz-platform-prod",
+  schema: "quiz_platform_raw",
+  name: "raw_responses",
+  description: "Raw question answer submissions and item telemetry records containing student response payloads, chosen options, and timing measurements."
+}

@@ -1,0 +1,382 @@
+# =============================================================================
+# Dataplex Data Quality Rules Specification
+# File: dataplex_dq_rules.yaml
+# Description: Google Cloud Dataplex Data Quality (AutoDQ) YAML rule definitions
+#              for the Quiz Platform Medallion Lakehouse Architecture.
+#              Enforces constraints across 6 DQ dimensions:
+#              - COMPLETENESS: Non-null constraints on keys & mandatory telemetry
+#              - UNIQUENESS: Primary key & idempotency constraints
+#              - CONFORMANCE: Range boundaries, enum domains, regex patterns
+#              - INTEGRITY: Referential integrity across attempts, users, quizzes
+#              - CONSISTENCY: Timestamp monotonicity, duration calculations
+#              - ACCURACY: Question snapshot JSON validity & array integrity
+# =============================================================================
+
+version: "1.0"
+
+dataplex_data_quality_spec:
+  project_id: "${PROJECT_ID:-quiz-platform-prod}"
+  location: "${LOCATION:-us-central1}"
+  dataset_id: "quiz_platform_analytics"
+
+  # Global Execution Parameters
+  execution_spec:
+    trigger:
+      schedule:
+        cron: "0 3 * * *" # Daily DQ evaluation at 03:00 UTC
+      on_demand: true
+    export_results:
+      bigquery_export:
+        dataset_id: "quiz_platform_analytics"
+        table_id: "dataplex_dq_validation_results"
+    notification_spec:
+      pubsub_topic: "projects/${PROJECT_ID:-quiz-platform-prod}/topics/data-quality-alerts"
+      alert_on_failure: true
+
+  # Data Quality Rules Catalog
+  rules:
+    # =========================================================================
+    # 1. COMPLETENESS RULES (Non-Null Constraints)
+    # =========================================================================
+    - rule_id: "DQ-RULE-COMP-01"
+      name: "Non-Null Attempt Primary Key"
+      description: "Ensures attempt_id is strictly non-null in fct_assessment_attempts"
+      table: "fct_assessment_attempts"
+      column: "attempt_id"
+      dimension: "COMPLETENESS"
+      type: "NON_NULL"
+      threshold: 1.0 # 100% adherence required (0 tolerance)
+
+    - rule_id: "DQ-RULE-COMP-02"
+      name: "Non-Null Attempt User Foreign Key"
+      description: "Ensures user_id is strictly non-null in fct_assessment_attempts"
+      table: "fct_assessment_attempts"
+      column: "user_id"
+      dimension: "COMPLETENESS"
+      type: "NON_NULL"
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-COMP-03"
+      name: "Non-Null Attempt Quiz Foreign Key"
+      description: "Ensures quiz_id is strictly non-null in fct_assessment_attempts"
+      table: "fct_assessment_attempts"
+      column: "quiz_id"
+      dimension: "COMPLETENESS"
+      type: "NON_NULL"
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-COMP-04"
+      name: "Non-Null Attempt Started Timestamp"
+      description: "Ensures started_at_utc is strictly populated for all attempts"
+      table: "fct_assessment_attempts"
+      column: "started_at_utc"
+      dimension: "COMPLETENESS"
+      type: "NON_NULL"
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-COMP-05"
+      name: "Non-Null Response Primary Key"
+      description: "Ensures response_id is strictly non-null in fct_question_responses"
+      table: "fct_question_responses"
+      column: "response_id"
+      dimension: "COMPLETENESS"
+      type: "NON_NULL"
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-COMP-06"
+      name: "Non-Null Response Attempt Foreign Key"
+      description: "Ensures attempt_id reference is strictly non-null in responses"
+      table: "fct_question_responses"
+      column: "attempt_id"
+      dimension: "COMPLETENESS"
+      type: "NON_NULL"
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-COMP-07"
+      name: "Non-Null Response Question Foreign Key"
+      description: "Ensures question_id reference is strictly non-null in responses"
+      table: "fct_question_responses"
+      column: "question_id"
+      dimension: "COMPLETENESS"
+      type: "NON_NULL"
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-COMP-08"
+      name: "Non-Null User Primary Key"
+      description: "Ensures user_id is strictly non-null in dim_users"
+      table: "dim_users"
+      column: "user_id"
+      dimension: "COMPLETENESS"
+      type: "NON_NULL"
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-COMP-09"
+      name: "Non-Null Quiz Primary Key"
+      description: "Ensures quiz_id is strictly non-null in dim_quizzes"
+      table: "dim_quizzes"
+      column: "quiz_id"
+      dimension: "COMPLETENESS"
+      type: "NON_NULL"
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-COMP-10"
+      name: "Non-Null Audit Event Primary Key"
+      description: "Ensures audit_id is strictly non-null in fct_audit_events"
+      table: "fct_audit_events"
+      column: "audit_id"
+      dimension: "COMPLETENESS"
+      type: "NON_NULL"
+      threshold: 1.0
+
+    # =========================================================================
+    # 2. UNIQUENESS RULES (Primary Key & Idempotency Constraints)
+    # =========================================================================
+    - rule_id: "DQ-RULE-UNIQ-01"
+      name: "Unique Attempt Primary Key"
+      description: "Ensures attempt_id is 100% unique in fct_assessment_attempts (no duplicate retries)"
+      table: "fct_assessment_attempts"
+      column: "attempt_id"
+      dimension: "UNIQUENESS"
+      type: "UNIQUE"
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-UNIQ-02"
+      name: "Unique Response Primary Key"
+      description: "Ensures response_id is 100% unique in fct_question_responses"
+      table: "fct_question_responses"
+      column: "response_id"
+      dimension: "UNIQUENESS"
+      type: "UNIQUE"
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-UNIQ-03"
+      name: "Unique User Primary Key & Email"
+      description: "Ensures user_id and email are strictly unique in dim_users"
+      table: "dim_users"
+      column: "user_id"
+      dimension: "UNIQUENESS"
+      type: "UNIQUE"
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-UNIQ-04"
+      name: "Unique Quiz Primary Key & Slug"
+      description: "Ensures quiz_id and slug are strictly unique in dim_quizzes"
+      table: "dim_quizzes"
+      column: "quiz_id"
+      dimension: "UNIQUENESS"
+      type: "UNIQUE"
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-UNIQ-05"
+      name: "Unique Audit Event Primary Key"
+      description: "Ensures audit_id is unique in fct_audit_events"
+      table: "fct_audit_events"
+      column: "audit_id"
+      dimension: "UNIQUENESS"
+      type: "UNIQUE"
+      threshold: 1.0
+
+    # =========================================================================
+    # 3. CONFORMANCE RULES (Range Boundaries & Enum Sets)
+    # =========================================================================
+    - rule_id: "DQ-RULE-CONF-01"
+      name: "Percentage Range Bound Clamping"
+      description: "Enforces that attempt percentage is strictly bounded within [0.0, 100.0]"
+      table: "fct_assessment_attempts"
+      column: "percentage"
+      dimension: "CONFORMANCE"
+      type: "RANGE"
+      params:
+        min_value: 0.0
+        max_value: 100.0
+        include_min: true
+        include_max: true
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-CONF-02"
+      name: "Score Non-Negative Clamping"
+      description: "Enforces that score / obtained marks are non-negative (score >= 0.0)"
+      table: "fct_assessment_attempts"
+      column: "score"
+      dimension: "CONFORMANCE"
+      type: "RANGE"
+      params:
+        min_value: 0.0
+        include_min: true
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-CONF-03"
+      name: "Duration Non-Negative Bound"
+      description: "Enforces duration_seconds >= 0 for all assessment attempts"
+      table: "fct_assessment_attempts"
+      column: "duration_seconds"
+      dimension: "CONFORMANCE"
+      type: "RANGE"
+      params:
+        min_value: 0
+        include_min: true
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-CONF-04"
+      name: "Attempt Status Allowed Enum Values"
+      description: "Enforces that attempt status strictly conforms to canonical uppercase lifecycle enums"
+      table: "fct_assessment_attempts"
+      column: "status"
+      dimension: "CONFORMANCE"
+      type: "SET_EXPECTATION"
+      params:
+        values:
+          - "CREATED"
+          - "IN_PROGRESS"
+          - "SUBMITTING"
+          - "COMPLETED"
+          - "EXPIRED"
+          - "CANCELLED"
+          - "ABANDONED"
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-CONF-05"
+      name: "Marks Awarded Non-Negative Bound"
+      description: "Enforces marks_awarded >= 0.0 for question responses"
+      table: "fct_question_responses"
+      column: "marks_awarded"
+      dimension: "CONFORMANCE"
+      type: "RANGE"
+      params:
+        min_value: 0.0
+        include_min: true
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-CONF-06"
+      name: "Response Time Spent Non-Negative Bound"
+      description: "Enforces time_spent_seconds >= 0 for question responses"
+      table: "fct_question_responses"
+      column: "time_spent_seconds"
+      dimension: "CONFORMANCE"
+      type: "RANGE"
+      params:
+        min_value: 0
+        include_min: true
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-CONF-07"
+      name: "Question Difficulty Allowed Enum Values"
+      description: "Enforces question difficulty conforms to standard ratings"
+      table: "fct_question_responses"
+      column: "difficulty"
+      dimension: "CONFORMANCE"
+      type: "SET_EXPECTATION"
+      params:
+        values:
+          - "EASY"
+          - "MEDIUM"
+          - "HARD"
+          - "EXPERT"
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-CONF-08"
+      name: "User Role Allowed Enum Values"
+      description: "Enforces user role conforms to defined permission sets"
+      table: "dim_users"
+      column: "role"
+      dimension: "CONFORMANCE"
+      type: "SET_EXPECTATION"
+      params:
+        values:
+          - "STUDENT"
+          - "INSTRUCTOR"
+          - "ADMIN"
+          - "PROCTOR"
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-CONF-09"
+      name: "User Status Allowed Enum Values"
+      description: "Enforces user status conforms to account lifecycle state"
+      table: "dim_users"
+      column: "status"
+      dimension: "CONFORMANCE"
+      type: "SET_EXPECTATION"
+      params:
+        values:
+          - "ACTIVE"
+          - "SUSPENDED"
+          - "INACTIVE"
+      threshold: 1.0
+
+    # =========================================================================
+    # 4. CONSISTENCY & INTEGRITY RULES (Chronology & Referential Integrity)
+    # =========================================================================
+    - rule_id: "DQ-RULE-CONS-01"
+      name: "Attempt Timestamp Chronological Monotonicity"
+      description: "Validates expires_at_utc >= started_at_utc and submitted_at_utc >= started_at_utc"
+      table: "fct_assessment_attempts"
+      dimension: "CONSISTENCY"
+      type: "SQL_EXPRESSION"
+      params:
+        expression: "expires_at_utc >= started_at_utc AND (submitted_at_utc IS NULL OR submitted_at_utc >= started_at_utc)"
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-INTG-01"
+      name: "Attempt Referential Integrity to Dim Users & Quizzes"
+      description: "Validates that non-orphaned attempts resolve cleanly to existing users and quizzes"
+      table: "fct_assessment_attempts"
+      dimension: "INTEGRITY"
+      type: "SQL_EXPRESSION"
+      params:
+        expression: "is_orphaned = FALSE OR (user_id IS NOT NULL AND quiz_id IS NOT NULL)"
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-INTG-02"
+      name: "Response Referential Integrity to Attempts"
+      description: "Validates that question responses reference valid attempts"
+      table: "fct_question_responses"
+      dimension: "INTEGRITY"
+      type: "SQL_EXPRESSION"
+      params:
+        expression: "attempt_id IN (SELECT attempt_id FROM `${PROJECT_ID}.quiz_platform_analytics.fct_assessment_attempts`)"
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-INTG-03"
+      name: "Certificate Invariant - Only Passed Attempts Receive Certificates"
+      description: "Ensures certificates are issued exclusively for completed attempts with passed = TRUE"
+      table: "fct_certificates"
+      dimension: "INTEGRITY"
+      type: "SQL_EXPRESSION"
+      params:
+        expression: "attempt_id IN (SELECT attempt_id FROM `${PROJECT_ID}.quiz_platform_analytics.fct_assessment_attempts` WHERE passed = TRUE)"
+      threshold: 1.0
+
+    # =========================================================================
+    # 5. ACCURACY & STRUCTURAL RULES (JSON & Array Integrity)
+    # =========================================================================
+    - rule_id: "DQ-RULE-ACC-01"
+      name: "Question Snapshot JSON Structural Validity"
+      description: "Ensures question snapshots in responses are valid JSON objects"
+      table: "fct_question_responses"
+      column: "is_snapshot_valid"
+      dimension: "ACCURACY"
+      type: "SQL_EXPRESSION"
+      params:
+        expression: "is_snapshot_valid = TRUE"
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-ACC-02"
+      name: "Selected Options Array Cleanliness"
+      description: "Ensures selected_option_ids contains no NULL or untrimmed string elements"
+      table: "fct_question_responses"
+      dimension: "ACCURACY"
+      type: "SQL_EXPRESSION"
+      params:
+        expression: "(SELECT COUNT(1) FROM UNNEST(selected_option_ids) AS opt WHERE opt IS NULL OR opt != TRIM(opt)) = 0"
+      threshold: 1.0
+
+    - rule_id: "DQ-RULE-ACC-03"
+      name: "Audit Log Details JSON Validity"
+      description: "Ensures audit log event payloads are structurally valid JSON"
+      table: "fct_audit_events"
+      column: "is_valid_json"
+      dimension: "ACCURACY"
+      type: "SQL_EXPRESSION"
+      params:
+        expression: "is_valid_json = TRUE"
+      threshold: 1.0

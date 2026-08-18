@@ -1,0 +1,15 @@
+config {
+  type: "assertion",
+  description: "FEAT-23: Validates that question snapshots in fct_question_responses are successfully parsed without JSON corruption, truncation, or escaping syntax errors."
+}
+
+SELECT
+  response_id,
+  attempt_id,
+  question_id,
+  is_snapshot_valid,
+  question_text
+FROM
+  ${ref("fct_question_responses")}
+WHERE
+  is_snapshot_valid IS NOT TRUE

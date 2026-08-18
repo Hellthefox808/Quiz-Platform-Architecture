@@ -1,0 +1,26 @@
+config {
+  type: "table",
+  schema: "quiz_platform_analytics",
+  tags: ["marts", "gold"],
+  description: "Conformed dimension table for user accounts, role definitions, and access state.",
+  columns: {
+    user_id: "Primary key identifier for the user (UUID string)",
+    email: "Sanitized lowercase email address",
+    name: "Trimmed display name",
+    role: "User role (STUDENT, INSTRUCTOR, ADMIN, PROCTOR)",
+    status: "User status (ACTIVE, SUSPENDED, INACTIVE)",
+    last_login_at_utc: "ISO UTC timestamp of last login session",
+    created_at_utc: "ISO UTC timestamp of account creation"
+  }
+}
+
+SELECT
+  user_id,
+  email,
+  name,
+  role,
+  status,
+  last_login_at_utc,
+  created_at_utc
+FROM
+  ${ref("stg_users")}

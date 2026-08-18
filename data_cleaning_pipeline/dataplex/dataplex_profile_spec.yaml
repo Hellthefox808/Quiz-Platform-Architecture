@@ -1,0 +1,435 @@
+# =============================================================================
+# Dataplex Profile Specification
+# File: dataplex_profile_spec.yaml
+# Description: Google Cloud Dataplex statistical data profile scan specification
+#              for the Quiz Platform Medallion Lakehouse Architecture.
+#              Defines automated profiling scans, sampling strategies, and statistical
+#              metric calculations across Bronze Raw, Silver Staging, and Gold Marts.
+# =============================================================================
+
+version: "1.0"
+
+dataplex_profile_spec:
+  project_id: "${PROJECT_ID:-quiz-platform-prod}"
+  location: "${LOCATION:-us-central1}"
+  lake_id: "quiz-platform-lake"
+  zone_id: "analytics-zone"
+  dataset_id: "quiz_platform_analytics"
+  raw_dataset_id: "quiz_platform_raw"
+  
+  # Global Scan Configuration
+  execution_spec:
+    trigger:
+      schedule:
+        cron: "0 2 * * *" # Daily profiling run at 02:00 UTC
+      on_demand: true
+    export_results:
+      bigquery_export:
+        dataset_id: "quiz_platform_analytics"
+        table_id: "dataplex_profile_results"
+        partition_by: "scan_time"
+
+  # Table Profiling Scans
+  scans:
+    # ---------------------------------------------------------------------------
+    # Gold Fact: fct_assessment_attempts
+    # ---------------------------------------------------------------------------
+    - scan_id: "profile-gold-fct-assessment-attempts"
+      display_name: "Profile Scan - Gold Assessment Attempts Mart"
+      target:
+        project_id: "${PROJECT_ID:-quiz-platform-prod}"
+        dataset_id: "quiz_platform_analytics"
+        table_id: "fct_assessment_attempts"
+      sampling_strategy:
+        dynamic_sampling:
+          threshold_rows: 1000000
+        sample_percentage: 100.0 # Full scan for analytical fact table
+      metrics:
+        # Table-level metrics
+        table_metrics:
+          - row_count
+        # Column-level metrics
+        column_metrics:
+          - column: "attempt_id"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+              - distinct_ratio
+              - min_length
+              - max_length
+          - column: "user_id"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+              - distinct_ratio
+          - column: "quiz_id"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+              - distinct_ratio
+          - column: "quiz_version_id"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+          - column: "status"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+              - top_10_frequent_values
+          - column: "started_at_utc"
+            metrics:
+              - null_count
+              - null_ratio
+              - min_value
+              - max_value
+          - column: "submitted_at_utc"
+            metrics:
+              - null_count
+              - null_ratio
+              - min_value
+              - max_value
+          - column: "expires_at_utc"
+            metrics:
+              - null_count
+              - null_ratio
+              - min_value
+              - max_value
+          - column: "duration_seconds"
+            metrics:
+              - null_count
+              - null_ratio
+              - min_value
+              - max_value
+              - mean
+              - standard_deviation
+              - quartiles
+          - column: "total_marks"
+            metrics:
+              - null_count
+              - null_ratio
+              - min_value
+              - max_value
+              - mean
+              - standard_deviation
+          - column: "score"
+            metrics:
+              - null_count
+              - null_ratio
+              - min_value
+              - max_value
+              - mean
+              - standard_deviation
+              - quartiles
+          - column: "percentage"
+            metrics:
+              - null_count
+              - null_ratio
+              - min_value
+              - max_value
+              - mean
+              - standard_deviation
+              - quartiles
+          - column: "passed"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+              - top_10_frequent_values
+          - column: "is_orphaned"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+              - top_10_frequent_values
+
+    # ---------------------------------------------------------------------------
+    # Gold Fact: fct_question_responses
+    # ---------------------------------------------------------------------------
+    - scan_id: "profile-gold-fct-question-responses"
+      display_name: "Profile Scan - Gold Question Responses Mart"
+      target:
+        project_id: "${PROJECT_ID:-quiz-platform-prod}"
+        dataset_id: "quiz_platform_analytics"
+        table_id: "fct_question_responses"
+      sampling_strategy:
+        dynamic_sampling:
+          threshold_rows: 5000000
+        sample_percentage: 100.0
+      metrics:
+        table_metrics:
+          - row_count
+        column_metrics:
+          - column: "response_id"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+              - distinct_ratio
+          - column: "attempt_id"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+          - column: "question_id"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+          - column: "selected_option_ids"
+            metrics:
+              - null_count
+              - null_ratio
+          - column: "is_correct"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+              - top_10_frequent_values
+          - column: "marks_awarded"
+            metrics:
+              - null_count
+              - null_ratio
+              - min_value
+              - max_value
+              - mean
+              - standard_deviation
+          - column: "time_spent_seconds"
+            metrics:
+              - null_count
+              - null_ratio
+              - min_value
+              - max_value
+              - mean
+              - standard_deviation
+          - column: "difficulty"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+              - top_10_frequent_values
+          - column: "is_snapshot_valid"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+              - top_10_frequent_values
+          - column: "created_at_utc"
+            metrics:
+              - null_count
+              - null_ratio
+              - min_value
+              - max_value
+
+    # ---------------------------------------------------------------------------
+    # Gold Dimension: dim_users
+    # ---------------------------------------------------------------------------
+    - scan_id: "profile-gold-dim-users"
+      display_name: "Profile Scan - Gold Conformed Dim Users"
+      target:
+        project_id: "${PROJECT_ID:-quiz-platform-prod}"
+        dataset_id: "quiz_platform_analytics"
+        table_id: "dim_users"
+      sampling_strategy:
+        sample_percentage: 100.0
+      metrics:
+        table_metrics:
+          - row_count
+        column_metrics:
+          - column: "user_id"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+              - distinct_ratio
+          - column: "email"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+              - distinct_ratio
+          - column: "role"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+              - top_10_frequent_values
+          - column: "status"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+              - top_10_frequent_values
+
+    # ---------------------------------------------------------------------------
+    # Gold Dimension: dim_quizzes
+    # ---------------------------------------------------------------------------
+    - scan_id: "profile-gold-dim-quizzes"
+      display_name: "Profile Scan - Gold Conformed Dim Quizzes"
+      target:
+        project_id: "${PROJECT_ID:-quiz-platform-prod}"
+        dataset_id: "quiz_platform_analytics"
+        table_id: "dim_quizzes"
+      sampling_strategy:
+        sample_percentage: 100.0
+      metrics:
+        table_metrics:
+          - row_count
+        column_metrics:
+          - column: "quiz_id"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+              - distinct_ratio
+          - column: "title"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+          - column: "slug"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+              - distinct_ratio
+          - column: "status"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+              - top_10_frequent_values
+
+    # ---------------------------------------------------------------------------
+    # Gold Fact: fct_audit_events
+    # ---------------------------------------------------------------------------
+    - scan_id: "profile-gold-fct-audit-events"
+      display_name: "Profile Scan - Gold Audit Events Mart"
+      target:
+        project_id: "${PROJECT_ID:-quiz-platform-prod}"
+        dataset_id: "quiz_platform_analytics"
+        table_id: "fct_audit_events"
+      sampling_strategy:
+        sample_percentage: 100.0
+      metrics:
+        table_metrics:
+          - row_count
+        column_metrics:
+          - column: "audit_id"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+          - column: "user_id"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+          - column: "action"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+              - top_10_frequent_values
+          - column: "resource_type"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+              - top_10_frequent_values
+          - column: "is_valid_json"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+              - top_10_frequent_values
+          - column: "created_at_utc"
+            metrics:
+              - null_count
+              - null_ratio
+              - min_value
+              - max_value
+
+    # ---------------------------------------------------------------------------
+    # Bronze Source Baseline Scans (for Pre/Post Drift Calculations)
+    # ---------------------------------------------------------------------------
+    - scan_id: "profile-bronze-raw-attempts"
+      display_name: "Profile Scan - Bronze Raw Attempts Source"
+      target:
+        project_id: "${PROJECT_ID:-quiz-platform-prod}"
+        dataset_id: "quiz_platform_raw"
+        table_id: "raw_attempts"
+      sampling_strategy:
+        sample_percentage: 100.0
+      metrics:
+        table_metrics:
+          - row_count
+        column_metrics:
+          - column: "id"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+          - column: "user_id"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+          - column: "quiz_id"
+            metrics:
+              - null_count
+              - null_ratio
+          - column: "status"
+            metrics:
+              - null_count
+              - null_ratio
+          - column: "started_at"
+            metrics:
+              - null_count
+              - null_ratio
+          - column: "score"
+            metrics:
+              - null_count
+              - null_ratio
+              - min_value
+              - max_value
+          - column: "total_marks"
+            metrics:
+              - null_count
+              - null_ratio
+              - min_value
+              - max_value
+
+    - scan_id: "profile-bronze-raw-responses"
+      display_name: "Profile Scan - Bronze Raw Responses Source"
+      target:
+        project_id: "${PROJECT_ID:-quiz-platform-prod}"
+        dataset_id: "quiz_platform_raw"
+        table_id: "raw_responses"
+      sampling_strategy:
+        sample_percentage: 100.0
+      metrics:
+        table_metrics:
+          - row_count
+        column_metrics:
+          - column: "id"
+            metrics:
+              - null_count
+              - null_ratio
+              - distinct_count
+          - column: "attempt_id"
+            metrics:
+              - null_count
+              - null_ratio
+          - column: "question_id"
+            metrics:
+              - null_count
+              - null_ratio
+          - column: "question_snapshot"
+            metrics:
+              - null_count
+              - null_ratio

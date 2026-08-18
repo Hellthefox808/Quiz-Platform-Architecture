@@ -1,0 +1,7 @@
+config {
+  type: "declaration",
+  database: "quiz-platform-prod",
+  schema: "quiz_platform_raw",
+  name: "raw_questions",
+  description: "Raw question items and assessment question bank definitions."
+}

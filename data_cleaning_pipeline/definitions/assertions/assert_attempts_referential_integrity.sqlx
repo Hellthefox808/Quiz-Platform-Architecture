@@ -1,0 +1,25 @@
+config {
+  type: "assertion",
+  description: "FEAT-19: Validates referential integrity of fct_assessment_attempts foreign keys (user_id -> dim_users, quiz_id -> dim_quizzes), failing on any unquarantined orphan relationships."
+}
+
+SELECT
+  a.attempt_id,
+  a.user_id,
+  a.quiz_id,
+  u.user_id AS dim_user_id,
+  q.quiz_id AS dim_quiz_id,
+  a.is_orphaned
+FROM
+  ${ref("fct_assessment_attempts")} AS a
+LEFT JOIN
+  ${ref("dim_users")} AS u
+ON
+  a.user_id = u.user_id
+LEFT JOIN
+  ${ref("dim_quizzes")} AS q
+ON
+  a.quiz_id = q.quiz_id
+WHERE
+  (a.user_id IS NOT NULL AND u.user_id IS NULL)
+  OR (a.quiz_id IS NOT NULL AND q.quiz_id IS NULL)

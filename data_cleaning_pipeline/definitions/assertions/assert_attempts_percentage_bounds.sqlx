@@ -1,0 +1,20 @@
+config {
+  type: "assertion",
+  description: "FEAT-20: Validates that percentage scores in fct_assessment_attempts are strictly bounded within [0.0, 100.0] and metric values are non-negative."
+}
+
+SELECT
+  attempt_id,
+  percentage,
+  score,
+  total_marks,
+  duration_seconds
+FROM
+  ${ref("fct_assessment_attempts")}
+WHERE
+  percentage < 0.0
+  OR percentage > 100.0
+  OR percentage IS NULL
+  OR score < 0.0
+  OR total_marks < 0.0
+  OR duration_seconds < 0

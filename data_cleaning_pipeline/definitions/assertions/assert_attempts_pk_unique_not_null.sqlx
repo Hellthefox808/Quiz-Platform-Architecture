@@ -1,0 +1,16 @@
+config {
+  type: "assertion",
+  description: "FEAT-18: Validates that attempt_id primary key in fct_assessment_attempts is strictly NOT NULL, non-empty, and unique with zero duplicate collisions."
+}
+
+SELECT
+  attempt_id,
+  COUNT(*) AS record_count
+FROM
+  ${ref("fct_assessment_attempts")}
+GROUP BY
+  attempt_id
+HAVING
+  attempt_id IS NULL
+  OR TRIM(attempt_id) = ''
+  OR COUNT(*) > 1

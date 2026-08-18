@@ -1,0 +1,21 @@
+config {
+  type: "assertion",
+  description: "FEAT-23: Validates that selected_option_ids arrays in fct_question_responses contain no NULL elements, untrimmed strings, or empty identifiers."
+}
+
+SELECT
+  response_id,
+  attempt_id,
+  question_id,
+  selected_option_ids
+FROM
+  ${ref("fct_question_responses")}
+WHERE
+  selected_option_ids IS NULL
+  OR EXISTS (
+    SELECT 1
+    FROM UNNEST(selected_option_ids) AS opt_elem
+    WHERE opt_elem IS NULL
+      OR TRIM(opt_elem) = ''
+      OR opt_elem != TRIM(opt_elem)
+  )

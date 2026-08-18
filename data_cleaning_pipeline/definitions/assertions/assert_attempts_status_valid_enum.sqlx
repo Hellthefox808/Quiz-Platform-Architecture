@@ -1,0 +1,21 @@
+config {
+  type: "assertion",
+  description: "FEAT-21: Validates that attempt status conforms strictly to permitted lifecycle domain enums (CREATED, IN_PROGRESS, SUBMITTING, COMPLETED, EXPIRED, CANCELLED, ABANDONED)."
+}
+
+SELECT
+  attempt_id,
+  status
+FROM
+  ${ref("fct_assessment_attempts")}
+WHERE
+  status IS NULL
+  OR status NOT IN (
+    'CREATED',
+    'IN_PROGRESS',
+    'SUBMITTING',
+    'COMPLETED',
+    'EXPIRED',
+    'CANCELLED',
+    'ABANDONED'
+  )

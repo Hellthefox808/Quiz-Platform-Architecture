@@ -1,0 +1,74 @@
+config {
+  type: "view",
+  schema: "quiz_platform_analytics",
+  tags: ["staging", "silver"],
+  description: "Silver staging model for user identity and profile records. Cleans email formatting, normalizes role/status enums, and deduplicates user records.",
+  columns: {
+    user_id: "Primary key user UUID identifier",
+    email: "Sanitized lowercase user email address",
+    name: "Trimmed user display name",
+    role: "Normalized uppercase user role (STUDENT, INSTRUCTOR, ADMIN, PROCTOR)",
+    status: "Normalized user account status (ACTIVE, SUSPENDED, INACTIVE)",
+    last_login_at_utc: "Normalized ISO UTC timestamp of last user session",
+    created_at_utc: "Normalized ISO UTC timestamp of user account creation"
+  }
+}
+
+WITH raw_extracted AS (
+  SELECT
+    TRIM(CAST(id AS STRING)) AS user_id,
+    LOWER(TRIM(CAST(email AS STRING))) AS email,
+    TRIM(CAST(name AS STRING)) AS name,
+    UPPER(TRIM(CAST(role AS STRING))) AS role_raw,
+    UPPER(TRIM(CAST(status AS STRING))) AS status_raw,
+    COALESCE(
+      SAFE.PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%E*SZ', CAST(last_login_at AS STRING)),
+      SAFE.PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%E*S%Ez', CAST(last_login_at AS STRING)),
+      SAFE.PARSE_TIMESTAMP('%Y-%m-%d %H:%M:%E*S', CAST(last_login_at AS STRING))
+    ) AS last_login_at_utc,
+    COALESCE(
+      SAFE.PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%E*SZ', CAST(created_at AS STRING)),
+      SAFE.PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%E*S%Ez', CAST(created_at AS STRING)),
+      SAFE.PARSE_TIMESTAMP('%Y-%m-%d %H:%M:%E*S', CAST(created_at AS STRING))
+    ) AS created_at_utc,
+    COALESCE(
+      SAFE.PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%E*SZ', CAST(updated_at AS STRING)),
+      SAFE.PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%E*S%Ez', CAST(updated_at AS STRING)),
+      SAFE.PARSE_TIMESTAMP('%Y-%m-%d %H:%M:%E*S', CAST(updated_at AS STRING))
+    ) AS updated_at_utc
+  FROM
+    ${ref("raw_users")}
+  WHERE
+    id IS NOT NULL AND TRIM(CAST(id AS STRING)) != ''
+),
+
+deduplicated AS (
+  SELECT
+    *
+  FROM
+    raw_extracted
+  QUALIFY
+    ROW_NUMBER() OVER(
+      PARTITION BY user_id
+      ORDER BY
+        COALESCE(updated_at_utc, created_at_utc, TIMESTAMP('1970-01-01 00:00:00 UTC')) DESC,
+        user_id DESC
+    ) = 1
+)
+
+SELECT
+  user_id,
+  email,
+  name,
+  CASE
+    WHEN role_raw IN ('STUDENT', 'INSTRUCTOR', 'ADMIN', 'PROCTOR') THEN role_raw
+    ELSE 'STUDENT'
+  END AS role,
+  CASE
+    WHEN status_raw IN ('ACTIVE', 'SUSPENDED', 'INACTIVE') THEN status_raw
+    ELSE 'ACTIVE'
+  END AS status,
+  last_login_at_utc,
+  created_at_utc
+FROM
+  deduplicated

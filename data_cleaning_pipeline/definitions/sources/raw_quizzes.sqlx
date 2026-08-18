@@ -1,0 +1,7 @@
+config {
+  type: "declaration",
+  database: "quiz-platform-prod",
+  schema: "quiz_platform_raw",
+  name: "raw_quizzes",
+  description: "Raw quiz catalog and assessment definitions ingested from the operational database."
+}
