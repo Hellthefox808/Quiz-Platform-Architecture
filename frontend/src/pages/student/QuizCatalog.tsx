@@ -18,13 +18,11 @@ import {
   X,
   SlidersHorizontal,
   GraduationCap,
-  Play,
   RotateCcw,
 } from 'lucide-react';
 import { useQuizzesQuery } from '../../hooks/useQuizzes';
 import { useCategoriesQuery } from '../../hooks/useCategories';
 import { QuizStudentSummary } from '../../types';
-import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { ErrorState } from '../../components/ui/ErrorState';
@@ -87,7 +85,7 @@ export const QuizCatalog: React.FC<QuizCatalogProps> = ({ onNavigate }) => {
     page_size: 50,
   });
 
-  const rawQuizzes: QuizStudentSummary[] = quizData?.items || [];
+  const rawQuizzes: QuizStudentSummary[] = useMemo(() => quizData?.items || [], [quizData?.items]);
 
   // Filter and sort client-side
   const filteredQuizzes = useMemo(() => {

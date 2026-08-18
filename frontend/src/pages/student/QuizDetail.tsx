@@ -9,11 +9,9 @@ import {
   Trophy,
   Info,
   ShieldCheck,
-  Zap,
 } from 'lucide-react';
 import { useQuizDetailQuery, useQuizMutations } from '../../hooks/useQuizzes';
 import { Button } from '../../components/ui/Button';
-import { Badge } from '../../components/ui/Badge';
 import { ErrorState } from '../../components/ui/ErrorState';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { NavigateFunction } from '../../types/navigation';
