@@ -110,21 +110,22 @@ export const QuizManager: React.FC<QuizManagerProps> = ({ onNavigate }) => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-150">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-6 border-b border-[#38281e]">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-6 border-b border-[#e8dfd5]">
         <div>
-          <span className="text-xs font-bold text-[#d4a373] uppercase tracking-wider">Assessment Configuration</span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#faf4ee] tracking-tight flex items-center gap-2 mt-1">
-            <BookOpen className="w-7 h-7 text-[#d4a373]" />
+          <span className="text-xs font-bold text-[#b46927] uppercase tracking-wider">Assessment Configuration</span>
+          <h1 className="text-2xl sm:text-3xl font-black text-[#1c130d] tracking-tight flex items-center gap-2 mt-1">
+            <BookOpen className="w-7 h-7 text-[#b46927]" />
             Quiz Management
           </h1>
-          <p className="text-xs sm:text-sm text-[#cbb8a9] mt-2 max-w-xl">
-            Author quizzes, manage immutable versions, set evaluation criteria, and publish to students.
+          <p className="text-xs sm:text-sm text-[#5c4738] mt-2 max-w-xl">
+            Author quizzes, manage immutable versions, set evaluation criteria, and publish to candidates.
           </p>
         </div>
 
         <Button
           variant="primary"
           size="md"
+          className="font-bold text-xs shadow-md shadow-[#b07238]/20"
           leftIcon={<Plus className="w-4 h-4" />}
           onClick={() => setCreateModal(true)}
         >
@@ -134,9 +135,9 @@ export const QuizManager: React.FC<QuizManagerProps> = ({ onNavigate }) => {
 
       {/* Quizzes Table */}
       {loading ? (
-        <div className="assess-surface rounded-2xl p-6 space-y-4 border border-[#38281e]">
+        <div className="bg-white rounded-3xl p-6 space-y-4 border border-[#e8dfd5] shadow-sm">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex justify-between items-center py-3 border-b border-[#38281e]/50">
+            <div key={i} className="flex justify-between items-center py-3 border-b border-[#e8dfd5]/60">
               <Skeleton variant="text" width="220px" height="18px" />
               <Skeleton variant="text" width="60px" height="16px" />
               <Skeleton variant="text" width="60px" height="16px" />
@@ -146,17 +147,17 @@ export const QuizManager: React.FC<QuizManagerProps> = ({ onNavigate }) => {
         </div>
       ) : quizzes.length === 0 ? (
         <EmptyState
-          icon={<BookOpen className="w-8 h-8" />}
+          icon={<BookOpen className="w-10 h-10 text-[#b46927]" />}
           title="No Assessments Configured"
           description="Get started by authoring your first technical assessment."
           primaryActionLabel="Create Assessment"
           onPrimaryAction={() => setCreateModal(true)}
         />
       ) : (
-        <div className="assess-surface rounded-2xl overflow-hidden shadow-xl border border-[#38281e]">
+        <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#e8dfd5]">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-[#cbb8a9]">
-              <thead className="bg-[#110c09] text-[10px] uppercase font-mono tracking-wider text-[#887467] border-b border-[#38281e]">
+            <table className="w-full text-left text-sm text-[#5c4738]">
+              <thead className="bg-[#f5efe8] text-[10px] uppercase font-mono tracking-wider text-[#8a7465] border-b border-[#e8dfd5]">
                 <tr>
                   <th className="px-6 py-4">Title & Category</th>
                   <th className="px-6 py-4 text-center">Version</th>
@@ -166,30 +167,30 @@ export const QuizManager: React.FC<QuizManagerProps> = ({ onNavigate }) => {
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#38281e]/60">
+              <tbody className="divide-y divide-[#e8dfd5]">
                 {quizzes.map((q) => {
                   const ver = q.current_version;
 
                   return (
-                    <tr key={q.id} className="hover:bg-[#231a14]/40 transition-colors">
+                    <tr key={q.id} className="hover:bg-[#faf7f2] transition-colors">
                       <td className="px-6 py-4">
-                        <div className="font-bold text-[#faf4ee] text-sm">{q.title}</div>
-                        <div className="text-[10px] text-[#887467] mt-1 uppercase tracking-wider font-medium">
+                        <div className="font-bold text-[#1c130d] text-sm">{q.title}</div>
+                        <div className="text-[10px] text-[#8a7465] mt-1 uppercase tracking-wider font-semibold">
                           {q.category?.name || 'Uncategorized'}
                         </div>
                       </td>
 
-                      <td className="px-6 py-4 text-center font-mono text-[11px] font-bold text-[#d4a373]">
-                        <span className="bg-[#c89666]/15 border border-[#c89666]/30 px-2 py-0.5 rounded">
+                      <td className="px-6 py-4 text-center font-mono text-[11px] font-bold text-[#b46927]">
+                        <span className="bg-[#b07238]/10 border border-[#b07238]/20 px-2 py-0.5 rounded-lg">
                           v{ver?.version_number || 1}
                         </span>
                       </td>
 
-                      <td className="px-6 py-4 text-center text-[11px] font-bold font-mono text-[#faf4ee]">
+                      <td className="px-6 py-4 text-center text-[11px] font-bold font-mono text-[#1c130d]">
                         {ver?.question_count || 0}
                       </td>
 
-                      <td className="px-6 py-4 text-center text-[11px] font-mono text-[#887467]">
+                      <td className="px-6 py-4 text-center text-[11px] font-mono text-[#8a7465]">
                         {Math.round((ver?.duration_seconds || 1200) / 60)} min
                       </td>
 
@@ -213,6 +214,7 @@ export const QuizManager: React.FC<QuizManagerProps> = ({ onNavigate }) => {
                           <Button
                             variant="secondary"
                             size="sm"
+                            className="font-bold text-xs"
                             leftIcon={<FileQuestion className="w-3.5 h-3.5" />}
                             onClick={() => onNavigate('admin-questions', { quizId: q.id, quizTitle: q.title })}
                           >
@@ -221,9 +223,9 @@ export const QuizManager: React.FC<QuizManagerProps> = ({ onNavigate }) => {
 
                           {q.status === 'DRAFT' ? (
                             <Button
-                              variant="glass"
+                              variant="primary"
                               size="sm"
-                              className="text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs"
                               leftIcon={<Send className="w-3.5 h-3.5" />}
                               onClick={() => setSelectedQuizId(q.id)}
                             >
@@ -231,9 +233,9 @@ export const QuizManager: React.FC<QuizManagerProps> = ({ onNavigate }) => {
                             </Button>
                           ) : (
                             <Button
-                              variant="glass"
+                              variant="outline"
                               size="sm"
-                              className="text-amber-400 border-amber-500/30 hover:bg-amber-500/10"
+                              className="text-amber-700 border-amber-300 hover:bg-amber-50 font-bold text-xs"
                               leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
                               onClick={() => handleUnpublish(q.id)}
                             >
@@ -265,16 +267,16 @@ export const QuizManager: React.FC<QuizManagerProps> = ({ onNavigate }) => {
               {checklist.checks.map((c, i) => (
                 <div
                   key={i}
-                  className={`p-4 rounded-xl border flex items-start gap-3 text-xs ${
+                  className={`p-4 rounded-2xl border flex items-start gap-3 text-xs ${
                     c.passed
-                      ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-300'
-                      : 'bg-rose-500/5 border-rose-500/20 text-rose-300'
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                      : 'bg-rose-50 border-rose-200 text-rose-900'
                   }`}
                 >
                   {c.passed ? (
-                    <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-emerald-600" />
                   ) : (
-                    <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                    <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-rose-600" />
                   )}
                   <div>
                     <div className="font-bold text-sm tracking-tight">{c.name}</div>
@@ -285,8 +287,8 @@ export const QuizManager: React.FC<QuizManagerProps> = ({ onNavigate }) => {
             </div>
 
             {checklist.blocking_issues.length > 0 && (
-              <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl text-xs text-rose-300">
-                <strong className="block uppercase tracking-wider text-[10px] mb-2">Blocking Issues</strong>
+              <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-800">
+                <strong className="block uppercase tracking-wider text-[10px] mb-2 font-bold text-rose-900">Blocking Issues</strong>
                 <ul className="list-disc pl-4 space-y-1">
                   {checklist.blocking_issues.map((b, idx) => (
                     <li key={idx} className="leading-relaxed">
@@ -297,7 +299,7 @@ export const QuizManager: React.FC<QuizManagerProps> = ({ onNavigate }) => {
               </div>
             )}
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-[#38281e]">
+            <div className="flex justify-end gap-3 pt-4 border-t border-[#e8dfd5]">
               <Button
                 variant="outline"
                 size="sm"
@@ -309,7 +311,7 @@ export const QuizManager: React.FC<QuizManagerProps> = ({ onNavigate }) => {
               <Button
                 variant="primary"
                 size="sm"
-                className="bg-emerald-600 hover:bg-emerald-500 border-emerald-500/40"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
                 disabled={!checklist.is_publishable || publishQuiz.isPending}
                 isLoading={publishQuiz.isPending}
                 onClick={() => handlePublish(selectedQuizId)}
@@ -332,7 +334,7 @@ export const QuizManager: React.FC<QuizManagerProps> = ({ onNavigate }) => {
       >
         <form onSubmit={handleCreateQuiz} className="space-y-5">
           {createError && (
-            <div className="p-4 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs rounded-xl font-medium">
+            <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-2xl font-medium">
               {createError}
             </div>
           )}
@@ -354,7 +356,7 @@ export const QuizManager: React.FC<QuizManagerProps> = ({ onNavigate }) => {
           />
 
           <div>
-            <label className="block text-xs font-semibold text-[#cbb8a9] mb-1.5 uppercase tracking-wider">
+            <label className="block text-xs font-bold text-[#5c4738] mb-1.5 uppercase tracking-wider">
               Description
             </label>
             <textarea
@@ -362,7 +364,7 @@ export const QuizManager: React.FC<QuizManagerProps> = ({ onNavigate }) => {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Overview of topics and skills assessed..."
-              className="w-full px-3.5 py-2 bg-[#110c09] border border-[#38281e] rounded-xl text-[#faf4ee] text-xs sm:text-sm focus:outline-none focus:border-[#d4a373] focus:ring-1 focus:ring-[#d4a373] shadow-inner"
+              className="w-full px-3.5 py-2 bg-white border border-[#e8dfd5] rounded-2xl text-[#1c130d] text-xs sm:text-sm focus:outline-none focus:border-[#b46927] shadow-sm"
             />
           </div>
 
@@ -394,42 +396,42 @@ export const QuizManager: React.FC<QuizManagerProps> = ({ onNavigate }) => {
           </div>
 
           {/* Assessment Rules Toggles */}
-          <div className="pt-3 space-y-2.5 border-t border-[#38281e]">
-            <span className="block text-[10px] font-bold uppercase tracking-wider text-[#887467] mb-2">
+          <div className="pt-3 space-y-2.5 border-t border-[#e8dfd5]">
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-[#8a7465] mb-2">
               Assessment Rules
             </span>
-            <label className="flex items-center gap-3 text-xs text-[#cbb8a9] cursor-pointer p-3 bg-[#110c09] border border-[#38281e] rounded-xl hover:border-[#4e382b] transition">
+            <label className="flex items-center gap-3 text-xs text-[#5c4738] cursor-pointer p-3.5 bg-[#faf7f2] border border-[#e8dfd5] rounded-2xl hover:border-[#b46927]/40 transition">
               <input
                 type="checkbox"
                 checked={negativeMarking}
                 onChange={(e) => setNegativeMarking(e.target.checked)}
-                className="w-4 h-4 rounded border-[#38281e] text-[#c89666] focus:ring-[#d4a373] cursor-pointer"
+                className="w-4 h-4 rounded border-[#e8dfd5] text-[#b46927] focus:ring-[#b46927] cursor-pointer"
               />
               <span>Enable Negative Marking (-{negativeMarkValue} per incorrect answer)</span>
             </label>
 
-            <label className="flex items-center gap-3 text-xs text-[#cbb8a9] cursor-pointer p-3 bg-[#110c09] border border-[#38281e] rounded-xl hover:border-[#4e382b] transition">
+            <label className="flex items-center gap-3 text-xs text-[#5c4738] cursor-pointer p-3.5 bg-[#faf7f2] border border-[#e8dfd5] rounded-2xl hover:border-[#b46927]/40 transition">
               <input
                 type="checkbox"
                 checked={shuffleQuestions}
                 onChange={(e) => setShuffleQuestions(e.target.checked)}
-                className="w-4 h-4 rounded border-[#38281e] text-[#c89666] focus:ring-[#d4a373] cursor-pointer"
+                className="w-4 h-4 rounded border-[#e8dfd5] text-[#b46927] focus:ring-[#b46927] cursor-pointer"
               />
               <span>Shuffle question order for each attempt</span>
             </label>
 
-            <label className="flex items-center gap-3 text-xs text-[#cbb8a9] cursor-pointer p-3 bg-[#110c09] border border-[#38281e] rounded-xl hover:border-[#4e382b] transition">
+            <label className="flex items-center gap-3 text-xs text-[#5c4738] cursor-pointer p-3.5 bg-[#faf7f2] border border-[#e8dfd5] rounded-2xl hover:border-[#b46927]/40 transition">
               <input
                 type="checkbox"
                 checked={shuffleOptions}
                 onChange={(e) => setShuffleOptions(e.target.checked)}
-                className="w-4 h-4 rounded border-[#38281e] text-[#c89666] focus:ring-[#d4a373] cursor-pointer"
+                className="w-4 h-4 rounded border-[#e8dfd5] text-[#b46927] focus:ring-[#b46927] cursor-pointer"
               />
               <span>Shuffle choice options for each attempt</span>
             </label>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-[#38281e]">
+          <div className="flex justify-end gap-3 pt-4 border-t border-[#e8dfd5]">
             <Button
               variant="outline"
               size="sm"

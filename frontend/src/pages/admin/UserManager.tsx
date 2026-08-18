@@ -77,37 +77,37 @@ export const UserManager: React.FC<UserManagerProps> = ({ onNavigate }) => {
       <div>
         <button
           onClick={() => onNavigate('admin-dashboard')}
-          className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#cbb8a9] hover:text-[#faf4ee] mb-6 transition cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#5c4738] hover:text-[#1c130d] mb-6 transition cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Admin Console
         </button>
 
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-[#38281e]">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-[#e8dfd5]">
           <div>
-            <span className="text-xs font-bold text-[#d4a373] uppercase tracking-wider">User Governance</span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#faf4ee] tracking-tight flex items-center gap-2 mt-1">
-              <Users className="w-7 h-7 text-[#d4a373]" />
-              Registered Accounts & Roles
+            <span className="text-xs font-bold text-[#b46927] uppercase tracking-wider">User Governance</span>
+            <h1 className="text-2xl sm:text-3xl font-black text-[#1c130d] tracking-tight flex items-center gap-2 mt-1">
+              <Users className="w-7 h-7 text-[#b46927]" />
+              Registered Accounts & Access Control
             </h1>
-            <p className="text-xs sm:text-sm text-[#cbb8a9] mt-2 max-w-xl">
-              Inspect user attempt velocities, manage role permissions, and control access statuses.
+            <p className="text-xs sm:text-sm text-[#5c4738] mt-2 max-w-xl">
+              Inspect candidate attempt velocity, manage role permissions, and control account statuses.
             </p>
           </div>
 
           {/* Search Form */}
           <form onSubmit={handleSearchSubmit} className="flex gap-2">
             <div className="relative">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#887467]" />
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8a7465]" />
               <input
                 type="text"
                 placeholder="Search user name or email..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-10 pr-4 py-2 text-xs rounded-xl w-64 bg-[#110c09] border border-[#38281e] text-[#faf4ee] placeholder-[#887467] focus:outline-none focus:border-[#d4a373] focus:ring-1 focus:ring-[#d4a373] shadow-inner"
+                className="pl-10 pr-4 py-2 text-xs rounded-2xl w-64 bg-white border border-[#e8dfd5] text-[#1c130d] placeholder-[#9e897b] focus:outline-none focus:border-[#b46927] shadow-sm"
               />
             </div>
-            <Button type="submit" variant="secondary" size="sm">
+            <Button type="submit" variant="secondary" size="sm" className="font-bold text-xs">
               Filter
             </Button>
           </form>
@@ -116,9 +116,9 @@ export const UserManager: React.FC<UserManagerProps> = ({ onNavigate }) => {
 
       {/* Main Table Content */}
       {loading ? (
-        <div className="assess-surface rounded-2xl p-6 space-y-3">
+        <div className="bg-white rounded-3xl p-6 space-y-3 border border-[#e8dfd5] shadow-sm">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="flex justify-between items-center py-3 border-b border-[#38281e]/40">
+            <div key={i} className="flex justify-between items-center py-3 border-b border-[#e8dfd5]/60">
               <Skeleton variant="text" width="180px" height="18px" />
               <Skeleton variant="text" width="80px" height="18px" />
               <Skeleton variant="text" width="60px" height="18px" />
@@ -128,7 +128,7 @@ export const UserManager: React.FC<UserManagerProps> = ({ onNavigate }) => {
         </div>
       ) : users.length === 0 ? (
         <EmptyState
-          icon={<Users className="w-8 h-8" />}
+          icon={<Users className="w-10 h-10 text-[#b46927]" />}
           title="No Users Found"
           description={
             searchInput
@@ -142,10 +142,10 @@ export const UserManager: React.FC<UserManagerProps> = ({ onNavigate }) => {
           }}
         />
       ) : (
-        <div className="assess-surface rounded-2xl overflow-hidden shadow-xl border border-[#38281e]">
+        <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#e8dfd5]">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-[#cbb8a9]">
-              <thead className="bg-[#110c09] text-[10px] uppercase font-mono tracking-wider text-[#887467] border-b border-[#38281e]">
+            <table className="w-full text-left text-sm text-[#5c4738]">
+              <thead className="bg-[#f5efe8] text-[10px] uppercase font-mono tracking-wider text-[#8a7465] border-b border-[#e8dfd5]">
                 <tr>
                   <th className="px-6 py-4">User</th>
                   <th className="px-6 py-4 text-center">Role</th>
@@ -155,12 +155,12 @@ export const UserManager: React.FC<UserManagerProps> = ({ onNavigate }) => {
                   <th className="px-6 py-4 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#38281e]/60">
+              <tbody className="divide-y divide-[#e8dfd5]">
                 {users.map((u) => (
-                  <tr key={u.id} className="hover:bg-[#231a14]/40 transition-colors">
+                  <tr key={u.id} className="hover:bg-[#faf7f2] transition-colors">
                     <td className="px-6 py-4">
-                      <div className="font-bold text-[#faf4ee] text-sm">{u.name}</div>
-                      <div className="text-[11px] text-[#887467] mt-0.5 font-mono">{u.email}</div>
+                      <div className="font-bold text-[#1c130d] text-sm">{u.name}</div>
+                      <div className="text-[11px] text-[#8a7465] mt-0.5 font-mono">{u.email}</div>
                     </td>
 
                     <td className="px-6 py-4 text-center">
@@ -170,11 +170,11 @@ export const UserManager: React.FC<UserManagerProps> = ({ onNavigate }) => {
                     </td>
 
                     <td className="px-6 py-4 text-center font-mono text-[11px]">
-                      <span className="text-emerald-400 font-bold">{u.passed_attempts}</span>
-                      <span className="text-[#887467]"> / {u.total_attempts}</span>
+                      <span className="text-emerald-700 font-bold">{u.passed_attempts}</span>
+                      <span className="text-[#8a7465]"> / {u.total_attempts}</span>
                     </td>
 
-                    <td className="px-6 py-4 text-center font-mono text-[11px] font-bold text-[#faf4ee]">
+                    <td className="px-6 py-4 text-center font-mono text-[11px] font-bold text-[#1c130d]">
                       {Math.round(u.average_score)}%
                     </td>
 
@@ -185,7 +185,7 @@ export const UserManager: React.FC<UserManagerProps> = ({ onNavigate }) => {
                     </td>
 
                     <td className="px-6 py-4 text-right">
-                      <div className="inline-flex items-center gap-2">
+                      <div className="inline-flex items-center gap-1.5">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -193,14 +193,14 @@ export const UserManager: React.FC<UserManagerProps> = ({ onNavigate }) => {
                           disabled={u.id === currentUser?.id}
                           title={u.role === 'ADMIN' ? 'Demote to Student' : 'Promote to Admin'}
                         >
-                          <Shield className="w-3.5 h-3.5 text-[#887467]" />
+                          <Shield className="w-3.5 h-3.5 text-[#8a7465]" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleToggleStatus(u)}
                           disabled={u.id === currentUser?.id}
-                          className={u.status === 'ACTIVE' ? 'text-rose-400 hover:text-rose-300' : 'text-emerald-400 hover:text-emerald-300'}
+                          className={u.status === 'ACTIVE' ? 'text-rose-600 hover:text-rose-700 hover:bg-rose-50' : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'}
                           title={u.status === 'ACTIVE' ? 'Suspend Account' : 'Activate Account'}
                         >
                           {u.status === 'ACTIVE' ? (

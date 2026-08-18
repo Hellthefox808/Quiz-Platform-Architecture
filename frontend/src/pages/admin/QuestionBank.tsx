@@ -14,7 +14,6 @@ import { useQuizQuestionsAdminQuery, useQuestionMutations } from '../../hooks/us
 import { useQuery } from '@tanstack/react-query';
 import { quizApi } from '../../api/client';
 import { quizKeys } from '../../lib/queryKeys';
-import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Input } from '../../components/ui/Input';
@@ -203,23 +202,23 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ quizId, quizTitle, o
       <div>
         <button
           onClick={() => onNavigate('admin-quizzes')}
-          className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#cbb8a9] hover:text-[#faf4ee] mb-6 transition cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#5c4738] hover:text-[#1c130d] mb-6 transition cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Assessments
         </button>
 
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-6 border-b border-[#38281e]">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-6 border-b border-[#e8dfd5]">
           <div>
-            <span className="text-xs font-bold text-[#d4a373] uppercase tracking-wider">Content Editor</span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#faf4ee] tracking-tight flex items-center gap-2 mt-1">
-              <FileQuestion className="w-7 h-7 text-[#d4a373]" />
+            <span className="text-xs font-bold text-[#b46927] uppercase tracking-wider">Content Authoring</span>
+            <h1 className="text-2xl sm:text-3xl font-black text-[#1c130d] tracking-tight flex items-center gap-2 mt-1">
+              <FileQuestion className="w-7 h-7 text-[#b46927]" />
               Question Bank
             </h1>
-            <p className="text-xs sm:text-sm text-[#cbb8a9] mt-2 max-w-xl">
+            <p className="text-xs sm:text-sm text-[#5c4738] mt-2 max-w-xl">
               Managing questions for:{' '}
-              <strong className="text-[#faf4ee]">{quiz?.title || quizTitle}</strong>{' '}
-              <span className="font-mono text-[11px] bg-[#231a14] text-[#d4a373] border border-[#38281e] px-2 py-0.5 rounded ml-1">
+              <strong className="text-[#1c130d]">{quiz?.title || quizTitle}</strong>{' '}
+              <span className="font-mono text-[11px] bg-[#b07238]/10 text-[#b46927] border border-[#b07238]/20 px-2 py-0.5 rounded-lg ml-1 font-bold">
                 v{quiz?.current_version?.version_number || 1}
               </span>
             </p>
@@ -229,7 +228,8 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ quizId, quizTitle, o
             <Button
               variant="secondary"
               size="md"
-              leftIcon={<Upload className="w-4 h-4 text-emerald-400" />}
+              className="font-bold text-xs"
+              leftIcon={<Upload className="w-4 h-4 text-emerald-600" />}
               onClick={() => {
                 setImportModalOpen(true);
                 setImportResult(null);
@@ -241,6 +241,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ quizId, quizTitle, o
             <Button
               variant="primary"
               size="md"
+              className="font-bold text-xs shadow-md shadow-[#b07238]/20"
               leftIcon={<Plus className="w-4 h-4" />}
               onClick={openCreateModal}
             >
@@ -254,7 +255,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ quizId, quizTitle, o
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="assess-surface rounded-2xl p-6 space-y-4 border border-[#38281e]">
+            <div key={i} className="bg-white rounded-3xl p-6 space-y-4 border border-[#e8dfd5] shadow-sm">
               <div className="flex justify-between items-center">
                 <Skeleton variant="text" width="80px" height="18px" />
                 <Skeleton variant="text" width="60px" height="20px" />
@@ -269,7 +270,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ quizId, quizTitle, o
         </div>
       ) : questions.length === 0 ? (
         <EmptyState
-          icon={<FileQuestion className="w-8 h-8" />}
+          icon={<FileQuestion className="w-10 h-10 text-[#b46927]" />}
           title="No Questions Configured"
           description="Add multiple-choice questions to this assessment before publishing."
           primaryActionLabel="Add First Question"
@@ -278,17 +279,16 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ quizId, quizTitle, o
       ) : (
         <div className="space-y-4">
           {questions.map((q, idx) => (
-            <Card
+            <div
               key={q.id}
-              variant="surface"
-              className="p-6 space-y-5 border border-[#38281e]"
+              className="bg-white rounded-3xl p-6 space-y-5 border border-[#e8dfd5] shadow-sm"
             >
-              <div className="flex items-start justify-between gap-4 border-b border-[#38281e]/80 pb-4">
+              <div className="flex items-start justify-between gap-4 border-b border-[#e8dfd5] pb-4">
                 <div className="flex items-center gap-3">
-                  <span className="font-mono text-sm font-bold text-[#d4a373]">
+                  <span className="font-mono text-sm font-black text-[#b46927]">
                     Q{idx + 1}
                   </span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-[#110c09] border border-[#38281e] text-[#cbb8a9]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-[#faf7f2] border border-[#e8dfd5] text-[#5c4738] font-mono">
                     {q.marks} Marks
                   </span>
                   <Badge
@@ -308,14 +308,14 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ quizId, quizTitle, o
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => openEditModal(q)}
-                    className="p-1.5 rounded-lg text-[#887467] hover:text-[#faf4ee] hover:bg-[#231a14] transition cursor-pointer"
+                    className="p-2 rounded-xl text-[#5c4738] hover:text-[#1c130d] hover:bg-[#faf7f2] border border-transparent hover:border-[#e8dfd5] transition cursor-pointer"
                     title="Edit question"
                   >
                     <Edit3 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDeleteQuestion(q.id)}
-                    className="p-1.5 rounded-lg text-[#887467] hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
+                    className="p-2 rounded-xl text-[#8a7465] hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer"
                     title="Delete question"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -323,23 +323,23 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ quizId, quizTitle, o
                 </div>
               </div>
 
-              <div className="text-base font-semibold text-[#faf4ee] leading-relaxed">{q.question_text}</div>
+              <div className="text-base font-bold text-[#1c130d] leading-relaxed">{q.question_text}</div>
 
               {/* Options Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                 {q.options.map((opt, optIdx) => (
                   <div
                     key={opt.id}
-                    className={`p-3.5 rounded-xl border text-xs flex items-center justify-between gap-3 ${
+                    className={`p-3.5 rounded-2xl border text-xs flex items-center justify-between gap-3 ${
                       opt.is_correct
-                        ? 'bg-emerald-500/5 border-emerald-500/30 text-emerald-300 font-semibold'
-                        : 'bg-[#110c09] border-[#38281e] text-[#cbb8a9]'
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold'
+                        : 'bg-[#faf7f2] border-[#e8dfd5] text-[#5c4738]'
                     }`}
                   >
                     <span className="flex items-center gap-3">
                       <span
-                        className={`w-6 h-6 rounded flex items-center justify-center font-mono font-bold shrink-0 ${
-                          opt.is_correct ? 'bg-emerald-500/20 text-emerald-300' : 'bg-[#231a14] text-[#887467]'
+                        className={`w-6 h-6 rounded-lg flex items-center justify-center font-mono font-bold shrink-0 text-xs ${
+                          opt.is_correct ? 'bg-emerald-200 text-emerald-900' : 'bg-white border border-[#e8dfd5] text-[#8a7465]'
                         }`}
                       >
                         {String.fromCharCode(65 + optIdx)}
@@ -347,7 +347,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ quizId, quizTitle, o
                       <span className="leading-relaxed">{opt.option_text}</span>
                     </span>
                     {opt.is_correct && (
-                      <span className="text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider shrink-0">
+                      <span className="text-[9px] bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md font-mono font-bold uppercase tracking-wider shrink-0">
                         Correct
                       </span>
                     )}
@@ -356,14 +356,14 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ quizId, quizTitle, o
               </div>
 
               {q.explanation && (
-                <div className="text-xs text-[#cbb8a9] bg-[#110c09] border border-[#38281e] p-4 rounded-xl space-y-1.5 mt-2">
-                  <span className="font-bold text-[#d4a373] uppercase tracking-wider text-[10px] block">
+                <div className="text-xs text-[#5c4738] bg-[#faf7f2] border border-[#e8dfd5] p-4 rounded-2xl space-y-1.5 mt-2">
+                  <span className="font-bold text-[#b46927] uppercase tracking-wider text-[10px] block">
                     Explanation
                   </span>
-                  <p className="leading-relaxed text-[#cbb8a9]">{q.explanation}</p>
+                  <p className="leading-relaxed text-[#5c4738]">{q.explanation}</p>
                 </div>
               )}
-            </Card>
+            </div>
           ))}
         </div>
       )}
@@ -378,13 +378,13 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ quizId, quizTitle, o
       >
         <form onSubmit={handleSaveQuestion} className="space-y-5">
           {saveError && (
-            <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs rounded-xl font-medium">
+            <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-2xl font-medium">
               {saveError}
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-[#cbb8a9] mb-1.5 uppercase tracking-wider">
+            <label className="block text-xs font-bold text-[#5c4738] mb-1.5 uppercase tracking-wider">
               Question Text *
             </label>
             <textarea
@@ -393,7 +393,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ quizId, quizTitle, o
               value={qText}
               onChange={(e) => setQText(e.target.value)}
               placeholder="Enter the complete question problem statement..."
-              className="w-full px-3.5 py-2 bg-[#110c09] border border-[#38281e] rounded-xl text-[#faf4ee] text-xs sm:text-sm focus:outline-none focus:border-[#d4a373] focus:ring-1 focus:ring-[#d4a373] shadow-inner"
+              className="w-full px-3.5 py-2 bg-white border border-[#e8dfd5] rounded-2xl text-[#1c130d] text-xs sm:text-sm focus:outline-none focus:border-[#b46927] shadow-sm"
             />
           </div>
 
@@ -422,16 +422,16 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ quizId, quizTitle, o
           </div>
 
           {/* Options Builder */}
-          <div className="space-y-3 pt-3 border-t border-[#38281e]">
+          <div className="space-y-3 pt-3 border-t border-[#e8dfd5]">
             <div className="flex items-center justify-between">
-              <label className="block text-xs font-semibold text-[#cbb8a9] uppercase tracking-wider">
+              <label className="block text-xs font-bold text-[#5c4738] uppercase tracking-wider">
                 Choice Options (Select 1 Correct)
               </label>
               {options.length < 6 && (
                 <button
                   type="button"
                   onClick={handleAddOptionSlot}
-                  className="text-xs text-[#d4a373] hover:text-[#e6ccb2] font-bold uppercase tracking-wider transition cursor-pointer"
+                  className="text-xs text-[#b46927] hover:text-[#8c531e] font-bold uppercase tracking-wider transition cursor-pointer"
                 >
                   + Add Option
                 </button>
@@ -445,7 +445,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ quizId, quizTitle, o
                   name="correct_option"
                   checked={opt.is_correct}
                   onChange={() => handleCorrectRadioChange(idx)}
-                  className="w-4 h-4 text-[#c89666] focus:ring-[#d4a373] bg-[#110c09] border-[#38281e] cursor-pointer"
+                  className="w-4 h-4 text-[#b46927] focus:ring-[#b46927] bg-white border-[#e8dfd5] cursor-pointer"
                   title="Mark as correct answer"
                 />
                 <input
@@ -454,17 +454,17 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ quizId, quizTitle, o
                   value={opt.text}
                   onChange={(e) => handleOptionTextChange(idx, e.target.value)}
                   placeholder={`Option ${String.fromCharCode(65 + idx)}...`}
-                  className={`flex-1 px-3.5 py-2 bg-[#110c09] border rounded-xl text-[#faf4ee] text-xs sm:text-sm focus:outline-none focus:ring-1 shadow-inner ${
+                  className={`flex-1 px-3.5 py-2 bg-white border rounded-2xl text-[#1c130d] text-xs sm:text-sm focus:outline-none focus:ring-1 shadow-sm ${
                     opt.is_correct
-                      ? 'border-emerald-500/50 focus:border-emerald-500 focus:ring-emerald-500'
-                      : 'border-[#38281e] focus:border-[#d4a373] focus:ring-[#d4a373]'
+                      ? 'border-emerald-500 focus:border-emerald-600 focus:ring-emerald-500 font-semibold'
+                      : 'border-[#e8dfd5] focus:border-[#b46927] focus:ring-[#b46927]'
                   }`}
                 />
                 {options.length > 2 && (
                   <button
                     type="button"
                     onClick={() => handleRemoveOptionSlot(idx)}
-                    className="text-[#887467] hover:text-rose-400 p-1.5 transition cursor-pointer"
+                    className="text-[#8a7465] hover:text-rose-600 p-1.5 transition cursor-pointer"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -473,8 +473,8 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ quizId, quizTitle, o
             ))}
           </div>
 
-          <div className="pt-2 border-t border-[#38281e]">
-            <label className="block text-xs font-semibold text-[#cbb8a9] mb-1.5 mt-2 uppercase tracking-wider">
+          <div className="pt-2 border-t border-[#e8dfd5]">
+            <label className="block text-xs font-bold text-[#5c4738] mb-1.5 mt-2 uppercase tracking-wider">
               Explanation (Shown post-assessment)
             </label>
             <textarea
@@ -482,11 +482,11 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ quizId, quizTitle, o
               value={qExplanation}
               onChange={(e) => setQExplanation(e.target.value)}
               placeholder="Rationale and references for the correct choice..."
-              className="w-full px-3.5 py-2 bg-[#110c09] border border-[#38281e] rounded-xl text-[#faf4ee] text-xs sm:text-sm focus:outline-none focus:border-[#d4a373] focus:ring-1 focus:ring-[#d4a373] shadow-inner"
+              className="w-full px-3.5 py-2 bg-white border border-[#e8dfd5] rounded-2xl text-[#1c130d] text-xs sm:text-sm focus:outline-none focus:border-[#b46927] shadow-sm"
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-[#38281e]">
+          <div className="flex justify-end gap-3 pt-4 border-t border-[#e8dfd5]">
             <Button
               variant="outline"
               size="sm"
@@ -515,10 +515,10 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ quizId, quizTitle, o
         maxWidth="lg"
       >
         <div className="space-y-4">
-          <p className="text-xs text-[#cbb8a9]">
+          <p className="text-xs text-[#5c4738]">
             Paste an array of question objects (JSON):
           </p>
-          <pre className="p-4 rounded-xl bg-[#110c09] border border-[#38281e] text-[10px] text-[#d4a373] font-mono overflow-x-auto shadow-inner">
+          <pre className="p-4 rounded-2xl bg-[#faf7f2] border border-[#e8dfd5] text-[11px] text-[#b46927] font-mono overflow-x-auto shadow-inner">
 {`[
   {
     "question_text": "What is ACID in databases?",
@@ -532,12 +532,12 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ quizId, quizTitle, o
           </pre>
 
           {importResult && (
-            <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-300 space-y-1.5 shadow-sm">
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-900 space-y-1.5 shadow-sm">
               <div className="font-bold">
                 Import Complete: {importResult.imported_count} imported, {importResult.failed_count} failed.
               </div>
               {importResult.errors && importResult.errors.length > 0 && (
-                <ul className="list-disc pl-4 text-rose-300 mt-2">
+                <ul className="list-disc pl-4 text-rose-700 mt-2">
                   {importResult.errors.map((err, idx) => (
                     <li key={idx}>
                       Row {err.row}: {err.error}
@@ -555,7 +555,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ quizId, quizTitle, o
               value={importJsonText}
               onChange={(e) => setImportJsonText(e.target.value)}
               placeholder="[ { ... } ]"
-              className="w-full p-3.5 font-mono text-xs bg-[#110c09] border border-[#38281e] rounded-xl text-[#faf4ee] focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 shadow-inner"
+              className="w-full p-3.5 font-mono text-xs bg-white border border-[#e8dfd5] rounded-2xl text-[#1c130d] focus:outline-none focus:border-emerald-500 shadow-sm"
             />
 
             <div className="flex justify-end gap-3 pt-2">
@@ -570,7 +570,7 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({ quizId, quizTitle, o
                 variant="primary"
                 size="sm"
                 type="submit"
-                className="bg-emerald-600 hover:bg-emerald-500 border-emerald-500/40"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
                 isLoading={importLoading}
                 leftIcon={<Upload className="w-3.5 h-3.5" />}
               >
