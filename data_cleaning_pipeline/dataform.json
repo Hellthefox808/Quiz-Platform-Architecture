@@ -1,0 +1,6 @@
+{
+  "defaultSchema": "quiz_platform_analytics",
+  "assertionSchema": "quiz_platform_assertions",
+  "defaultDatabase": "quiz-platform-prod",
+  "defaultLocation": "us-central1"
+}

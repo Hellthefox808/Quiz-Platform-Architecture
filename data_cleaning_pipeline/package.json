@@ -1,0 +1,8 @@
+{
+  "name": "quiz-platform-data-cleaning-pipeline",
+  "version": "1.0.0",
+  "description": "Automated data quality assessment, profiling, and cleaning pipeline for ApexAssess Quiz Platform",
+  "dependencies": {
+    "@dataform/core": "^3.0.0"
+  }
+}
